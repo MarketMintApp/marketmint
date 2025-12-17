@@ -1,0 +1,189 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import type { User } from "@supabase/supabase-js";
+
+import GoldCalculator from "../components/GoldCalculator";
+import { supabase } from "../lib/supabaseClient";
+import { AnimatedDisclosure } from "../components/AnimatedDisclosure";
+
+export default function GoldCalculatorPage() {
+  const router = useRouter();
+
+  const [user, setUser] = useState<User | null>(null);
+  const [authChecked, setAuthChecked] = useState(false);
+  const [saveMessage, setSaveMessage] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  // -------------------------------
+  // AUTH CHECK
+  // -------------------------------
+  useEffect(() => {
+    async function loadUser() {
+      const { data, error } = await supabase.auth.getUser();
+      if (!error && data?.user) {
+        setUser(data.user);
+      }
+      setAuthChecked(true);
+    }
+    loadUser();
+  }, []);
+
+  async function handleSave(valuation: {
+    metal_type: string;
+    karat: number;
+    weight_gram: number;
+    spot_price: number;
+    melt_value: number;
+    notes?: string;
+  }) {
+    setError(null);
+    setSaveMessage(null);
+
+    if (!user) {
+      router.replace("/login");
+      return;
+    }
+
+    const { error } = await supabase.from("valuations").insert([
+      {
+        user_id: user.id,
+        metal_type: valuation.metal_type,
+        karat: String(valuation.karat),
+        weight_gram: valuation.weight_gram,
+        spot_price: valuation.spot_price,
+        melt_value: valuation.melt_value,
+        notes: valuation.notes ?? null,
+      },
+    ]);
+
+    if (error) {
+      console.error(error);
+      setError("Could not save this valuation. Please try again.");
+      return;
+    }
+
+    setSaveMessage("Valuation saved to your workspace.");
+  }
+
+  if (!authChecked) {
+    return (
+      <main className="min-h-screen bg-slate-950 text-slate-50 flex items-center justify-center">
+        <p className="text-sm text-slate-400">Loading calculator…</p>
+      </main>
+    );
+  }
+
+  return (
+    <main className="min-h-screen bg-slate-950 text-slate-50">
+      <div className="mx-auto max-w-4xl px-4 py-10 space-y-10">
+        {/* HEADER */}
+        <header>
+          <h1 className="text-4xl font-semibold tracking-tight">
+            Gold Melt Calculator
+          </h1>
+          <p className="mt-3 text-base text-slate-300 max-w-2xl">
+            Quickly estimate the melt value of a single gold item. Enter karat,
+            weight, and spot price for a clean, distraction-free calculator
+            view.
+          </p>
+
+          <p className="mt-2 text-xs text-slate-400">
+            Working on multiple pieces or tracking offers?{" "}
+            <Link
+              href="/value"
+              className="font-medium text-emerald-300 underline underline-offset-2 hover:text-emerald-200"
+            >
+              Open the Valuation Workspace
+            </Link>{" "}
+            to save items and compare buyers.
+          </p>
+        </header>
+
+        {/* CALCULATOR CARD */}
+        <section className="rounded-2xl border border-slate-800 bg-slate-900/60 p-6">
+          <GoldCalculator showSaveControls onSave={handleSave} />
+
+          {saveMessage && (
+            <p className="mt-3 text-xs text-emerald-300">{saveMessage}</p>
+          )}
+          {error && <p className="mt-3 text-xs text-red-400">{error}</p>}
+        </section>
+
+        {/* OFFERS CTA (only for logged-in users) */}
+        {user && (
+          <section className="rounded-2xl border border-emerald-700/30 bg-emerald-600/10 p-5">
+            <h2 className="text-lg font-semibold text-emerald-300">
+              Turn this number into real offers
+            </h2>
+            <p className="mt-1 text-slate-300 text-sm max-w-xl">
+              Once you like the melt value, log quotes from jewelers, pawn
+              shops, and private buyers in your Offers Hub and see how they
+              stack up.
+            </p>
+
+            <Link
+              href="/offers/hub"
+              className="inline-flex items-center mt-3 rounded-full bg-emerald-600/90 px-4 py-1.5 text-sm font-medium text-white hover:bg-emerald-500"
+            >
+              Open Offers Hub
+            </Link>
+          </section>
+        )}
+
+        {/* EDUCATION BLOCK */}
+        <section className="space-y-4">
+          <h2 className="text-xl font-semibold">Understanding melt value</h2>
+          <p className="text-slate-300 max-w-3xl text-base">
+            Melt value is your baseline reference, not a guaranteed payout. Use
+            the comparisons below to sanity-check offers and spot lowball
+            quotes.
+          </p>
+
+          <AnimatedDisclosure
+            title="Cash-for-gold & pawn shops"
+            subtitle="Fastest payout, usually the lowest offer"
+          >
+            <ul className="space-y-1.5 text-[13px]">
+              <li>• Often pay the lowest percentage of melt value.</li>
+              <li>
+                • Useful for emergency cash, but rarely the best long-term
+                price.
+              </li>
+            </ul>
+          </AnimatedDisclosure>
+
+          <AnimatedDisclosure
+            title="Local jewelers"
+            subtitle="Better than pawn, still conservative"
+          >
+            <ul className="space-y-1.5 text-[13px]">
+              <li>• Commonly 10–30% higher than pawn shop offers.</li>
+              <li>
+                • Good balance of speed, trust, and payout — especially if you
+                shop 2–3 stores.
+              </li>
+            </ul>
+          </AnimatedDisclosure>
+
+          <AnimatedDisclosure
+            title="Private buyers & marketplaces"
+            subtitle="Highest potential payout"
+          >
+            <ul className="space-y-1.5 text-[13px]">
+              <li>
+                • Serious buyers can get close to melt for desirable items.
+              </li>
+              <li>
+                • Build in safety: meet in public, and verify weight and karat
+                at a jeweler when possible.
+              </li>
+            </ul>
+          </AnimatedDisclosure>
+        </section>
+      </div>
+    </main>
+  );
+}
