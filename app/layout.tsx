@@ -1,6 +1,8 @@
 // app/layout.tsx
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { Suspense } from "react";
+
 import "./globals.css";
 import AppHeader from "./components/AppHeader";
 import AnalyticsProvider from "./components/AnalyticsProvider";
@@ -66,18 +68,16 @@ export const viewport: Viewport = {
   themeColor: "#020617", // slate-950
 };
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-slate-950 text-slate-50`}
       >
-        {/* GA4 */}
-        <AnalyticsProvider />
+        {/* GA4 (wrap to satisfy Next prerender + useSearchParams requirements) */}
+        <Suspense fallback={null}>
+          <AnalyticsProvider />
+        </Suspense>
 
         {/* Global Header */}
         <AppHeader />
