@@ -1,7 +1,8 @@
 // app/lib/analytics.ts
 
 export const GA_MEASUREMENT_ID =
-  process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID || "";
+  process.env.NEXT_PUBLIC_GA_ID || "";
+
 
 // Narrow, explicit event names we care about in C10
 export type AnalyticsEventName =
