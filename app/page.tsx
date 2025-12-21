@@ -2,6 +2,8 @@
 import ProWaitlistForm from "./components/ProWaitlistForm";
 import HomeCtas from "./components/HomeCtas";
 import Link from "next/link";
+import { trackEvent } from "./lib/analytics";
+
 
 export default function HomePage() {
   return (
@@ -181,15 +183,25 @@ export default function HomePage() {
             <div className="mt-3 flex flex-col gap-4 md:mt-0 md:min-w-[260px]">
               <div className="flex flex-wrap gap-3">
                 <Link
-                  href="/value"
-                  className="inline-flex items-center rounded-full bg-emerald-600/90 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-500"
-                >
-                  Start free valuation
-                </Link>
-                <Link
-                  href="/offers"
-                  className="inline-flex items-center rounded-full border border-emerald-500/60 bg-slate-950 px-4 py-2 text-sm font-medium text-emerald-200 hover:bg-slate-900"
-                >
+  href="/value"
+  onClick={() =>
+    trackEvent("start_valuation_click", { placement: "home_hero" })
+  }
+  className="inline-flex items-center rounded-full bg-emerald-600/90 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-500"
+>
+  Start free valuation
+</Link>
+
+<Link
+  href="/offers"
+  onClick={() =>
+    trackEvent("offers_demo_click", { placement: "home_hero" })
+  }
+  className="inline-flex items-center rounded-full border border-emerald-500/60 bg-slate-950 px-4 py-2 text-sm font-medium text-emerald-200 hover:bg-slate-900"
+>
+  Explore offers demo
+</Link>
+trackEvent 
                   View offers demo
                 </Link>
               </div>
