@@ -1,8 +1,6 @@
 // app/lib/analytics.ts
 
-export const GA_MEASUREMENT_ID =
-  process.env.NEXT_PUBLIC_GA_ID || "";
-
+export const GA_MEASUREMENT_ID = process.env.NEXT_PUBLIC_GA_ID || "";
 
 // Narrow, explicit event names we care about in C10
 export type AnalyticsEventName =
@@ -31,7 +29,7 @@ export function isAnalyticsEnabled() {
 export function trackPageView(url: string) {
   if (!isAnalyticsEnabled()) return;
 
-  window.gtag!("event", "page_view", {
+  window.gtag?.("event", "page_view", {
     page_location: window.location.href,
     page_path: url,
   });
@@ -43,7 +41,7 @@ export function trackPageView(url: string) {
 export function trackEvent(name: AnalyticsEventName, params: GtagParams = {}) {
   if (!isAnalyticsEnabled()) return;
 
-  window.gtag!("event", name, {
+  window.gtag?.("event", name, {
     ...params,
   });
 }
