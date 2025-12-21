@@ -11,6 +11,7 @@ import { AnimatedDisclosure } from "../components/AnimatedDisclosure";
 import { gaEvent } from "../lib/ga";
 import { supabase } from "../lib/supabaseClient";
 import { DEMO_VALUATIONS, DEMO_OFFERS_ALL } from "../lib/demodata";
+import { trackEvent } from "../lib/analytics";
 
 function formatMetal(metal: string | null | undefined) {
   if (!metal) return "";
@@ -444,12 +445,14 @@ Saved: ${formatDate(v.created_at)}
           </p>
           <p className="mt-1 text-xs text-slate-400">
             Ready to shop offers?{" "}
-            <Link
-              href="/offers/hub"
-              className="font-medium text-emerald-300 underline underline-offset-2 hover:text-emerald-200"
-            >
-              Open the Offers hub
-            </Link>
+           <Link
+  href="/offers/hub"
+  onClick={() => trackEvent("offers_demo_click", { placement: "value_page" })}
+  className="font-medium text-emerald-300 underline underline-offset-2 hover:text-emerald-200"
+>
+  Open the Offers hub
+</Link>
+
             .
           </p>
           {demoMode && (
