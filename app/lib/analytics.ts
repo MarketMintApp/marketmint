@@ -2,13 +2,16 @@
 
 export const GA_MEASUREMENT_ID = process.env.NEXT_PUBLIC_GA_ID || "";
 
-// Narrow, explicit event names we care about in C10
+// Narrow, explicit event names we care about
 export type AnalyticsEventName =
   | "start_valuation_click"
   | "offers_demo_click"
   | "waitlist_submit"
   | "waitlist_submit_success"
-  | "waitlist_submit_error";
+  | "waitlist_submit_error"
+  | "valuation_unlock_viewed"
+  | "valuation_checkout_started"
+  | "valuation_checkout_completed";
 
 type GtagParams = Record<string, any>;
 
@@ -18,8 +21,18 @@ declare global {
   }
 }
 
+/**
+ * Enable DebugView for localhost / vercel previews or when ?debug=1 is present.
+ */
+export function isDebugEnabled() {
+  if (typeof window === "undefined") return false;
+  const qs = new URLSearchParams(window.location.search);
+  const host = window.location.hostname;
+  return qs.get("debug") === "1" || host === "localhost" || host.endsWith(".vercel.app");
+}
+
 export function isAnalyticsEnabled() {
-  return typeof window !== "undefined" && !!GA_MEASUREMENT_ID && !!window.gtag;
+  return typeof window !== "undefined" && !!window.gtag;
 }
 
 /**
@@ -32,6 +45,7 @@ export function trackPageView(url: string) {
   window.gtag?.("event", "page_view", {
     page_location: window.location.href,
     page_path: url,
+    debug_mode: isDebugEnabled(),
   });
 }
 
@@ -43,5 +57,12 @@ export function trackEvent(name: AnalyticsEventName, params: GtagParams = {}) {
 
   window.gtag?.("event", name, {
     ...params,
+    debug_mode: isDebugEnabled(),
   });
+
+  // Optional visibility during validation (remove later if you want)
+  if (isDebugEnabled()) {
+    // eslint-disable-next-line no-console
+    console.log("[trackEvent]", name, params);
+  }
 }

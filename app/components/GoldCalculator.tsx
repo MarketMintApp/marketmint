@@ -1,6 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { trackEvent } from "../lib/analytics";
+
+type LockMode = "none" | "pdf" | "afterN";
 
 type GoldCalculatorProps = {
   /** Optional heading above the calculator */
@@ -16,6 +19,24 @@ type GoldCalculatorProps = {
     melt_value: number;
     notes?: string;
   }) => void;
+
+  /**
+   * New paywall model:
+   * - "none": everything free
+   * - "pdf": melt value stays free, PDF export is premium (Option 1)
+   * - "afterN": reserved for later (not enforced in this step)
+   */
+  lockMode?: LockMode;
+  freeValuations?: number;
+
+  /**
+   * Legacy switch (do not use to lock melt value anymore).
+   * Kept for compatibility with existing callsites.
+   */
+  lockResults?: boolean;
+
+  /** Price shown in UI + sent in events */
+  pdfPriceText?: string;
 };
 
 const KARAT_OPTIONS = [
@@ -43,16 +64,32 @@ function calculateMeltValue(karat: number, grams: number, spotPrice: number) {
   return value;
 }
 
+function formatMoney(n: number) {
+  if (!Number.isFinite(n)) return "—";
+  return `$${n.toFixed(2)}`;
+}
+
 export default function GoldCalculator({
   showHeading = false,
   showSaveControls = false,
   onSave,
+
+  // NEW
+  lockMode = "pdf",
+  freeValuations = 1,
+  pdfPriceText = "$4.99",
+
+  // LEGACY (ignored for melt locking)
+  lockResults = false,
 }: GoldCalculatorProps) {
   const [metalType, setMetalType] = useState<string>("gold");
   const [karat, setKarat] = useState<number>(14);
   const [weightGrams, setWeightGrams] = useState<string>("");
   const [spotPrice, setSpotPrice] = useState<string>("2400");
   const [notes, setNotes] = useState<string>("");
+
+  // V1: no Stripe yet — local unlock for PDF only
+  const [pdfUnlocked, setPdfUnlocked] = useState<boolean>(false);
 
   const meltValue = calculateMeltValue(
     karat,
@@ -66,9 +103,56 @@ export default function GoldCalculator({
 
   const canSave = meltValue > 0 && weightGrams !== "" && spotPrice !== "";
 
+  /**
+   * IMPORTANT: Do NOT lock melt value in Option 1.
+   * We only lock the PDF export panel.
+   */
+  const pdfLocked = useMemo(() => {
+    if (lockMode === "none") return false;
+    if (lockMode === "pdf") return !pdfUnlocked;
+    // "afterN" not enforced yet; treat as locked until explicitly unlocked
+    return !pdfUnlocked;
+  }, [lockMode, pdfUnlocked]);
+
+  // Track "viewed" once per session when premium PDF panel is shown
+  const premiumPanelRef = useRef<HTMLDivElement | null>(null);
+  const firedViewedRef = useRef<boolean>(false);
+
+  useEffect(() => {
+    if (lockMode !== "pdf") return;
+    if (!premiumPanelRef.current) return;
+
+    const el = premiumPanelRef.current;
+
+    const io = new IntersectionObserver(
+      (entries) => {
+        const entry = entries[0];
+        if (!entry) return;
+
+        if (entry.isIntersecting && !firedViewedRef.current) {
+          firedViewedRef.current = true;
+
+          trackEvent("valuation_unlock_viewed", {
+            placement: "gold_calc_pdf_panel",
+            product: "pdf_export",
+            price_text: pdfPriceText,
+            lock_mode: lockMode,
+            free_valuations: freeValuations,
+            metal_type: metalType,
+          });
+        }
+      },
+      { threshold: 0.35 }
+    );
+
+    io.observe(el);
+    return () => io.disconnect();
+  }, [lockMode, freeValuations, pdfPriceText, metalType]);
+
   function handleSave() {
     if (!onSave || !canSave) return;
 
+    // Saving stays free in Option 1 (PDF is the paid feature)
     onSave({
       metal_type: metalType,
       karat,
@@ -82,24 +166,40 @@ export default function GoldCalculator({
   function handleCopy() {
     if (!canSave) return;
 
-    const melt = meltValue > 0 ? `$${meltValue.toFixed(2)}` : "—";
+    const melt = meltValue > 0 ? formatMoney(meltValue) : "—";
     const dealerLowLocal = meltValue * 0.85;
     const dealerHighLocal = meltValue * 0.9;
 
     const text = `
-${metalType.charAt(0).toUpperCase() + metalType.slice(1)} Valuation — ${
-      karat
-    }K, ${weightGrams}g
+${metalType.charAt(0).toUpperCase() + metalType.slice(1)} Valuation — ${karat}K, ${weightGrams}g
 Melt value: ${melt}
-Dealer offer (85–90%): $${dealerLowLocal.toFixed(
-      2
-    )} – $${dealerHighLocal.toFixed(2)}
+Dealer offer (85–90%): ${formatMoney(dealerLowLocal)} – ${formatMoney(dealerHighLocal)}
 Spot price used: $${spotPrice}
 Notes: ${notes || "None"}
 `.trim();
 
     navigator.clipboard.writeText(text);
     alert("Valuation copied to clipboard!");
+  }
+
+  function handleCheckoutStart() {
+    trackEvent("valuation_checkout_started", {
+      placement: "gold_calc_pdf_panel",
+      product: "pdf_export",
+      price_text: pdfPriceText,
+      lock_mode: lockMode,
+      free_valuations: freeValuations,
+      metal_type: metalType,
+    });
+
+    // V1: no Stripe yet — simulate unlock to validate flow
+    setPdfUnlocked(true);
+  }
+
+  function handleDownloadPdf() {
+    // Placeholder: wire real PDF export in Step 6.B.
+    // This gives a “download-ish” action now.
+    window.print();
   }
 
   return (
@@ -197,7 +297,7 @@ Notes: ${notes || "None"}
         </div>
       </div>
 
-      {/* Result + save area */}
+      {/* Results + save area (NEVER locked in Option 1) */}
       <div className="mt-3 rounded-xl border border-emerald-500/40 bg-emerald-500/5 px-4 py-3">
         <p className="text-xs font-medium uppercase tracking-wide text-emerald-300">
           Estimated melt value
@@ -208,23 +308,22 @@ Notes: ${notes || "None"}
           key={meltValue} // force remount when value changes
           className="mt-1 text-2xl font-semibold"
           style={{
-            animation:
-              meltValue > 0 ? "fadeSlide 0.4s ease-out" : "none",
+            animation: meltValue > 0 ? "fadeSlide 0.4s ease-out" : "none",
           }}
         >
-          {meltValue > 0 ? `$${meltValue.toFixed(2)}` : "—"}
+          {meltValue > 0 ? formatMoney(meltValue) : "—"}
         </p>
 
         <p className="mt-1 text-[11px] text-slate-400">
-          This is an estimate based on melt value only. Buyers typically pay
-          less to cover refining, risk, and margin.
+          This is an estimate based on melt value only. Buyers typically pay less
+          to cover refining, risk, and margin.
         </p>
 
         {meltValue > 0 && (
           <p className="mt-1 text-[11px] text-emerald-300">
             Typical dealer offer (~85–90% of melt):{" "}
             <span className="font-semibold">
-              ${dealerLow.toFixed(2)} – ${dealerHigh.toFixed(2)}
+              {formatMoney(dealerLow)} – {formatMoney(dealerHigh)}
             </span>
           </p>
         )}
@@ -280,6 +379,85 @@ Notes: ${notes || "None"}
             </div>
           </div>
         )}
+
+        {lockResults ? (
+          <p className="mt-3 text-[11px] text-slate-400">
+            Note: lockResults is enabled, but melt value is intentionally not locked in Step 6.A (PDF export is the paid feature).
+          </p>
+        ) : null}
+      </div>
+
+      {/* Premium “Download PDF” panel (this is the ONLY paid gate) */}
+      <div
+        ref={premiumPanelRef}
+        className="rounded-2xl border border-emerald-500/20 bg-slate-950/40 p-5 shadow-sm"
+      >
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-emerald-300">
+              Premium export
+            </p>
+            <h3 className="mt-1 text-lg font-semibold text-slate-50">
+              Download PDF valuation
+            </h3>
+            <p className="mt-1 text-sm text-slate-300">
+              Clean, shareable PDF summary for records or sending to a buyer/jeweler.
+            </p>
+          </div>
+          <div className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-sm font-semibold text-emerald-200">
+            {pdfPriceText}
+          </div>
+        </div>
+
+        <ul className="mt-4 space-y-2 text-sm text-slate-200">
+          <li className="flex gap-2">
+            <span className="mt-1 inline-block h-1.5 w-1.5 rounded-full bg-emerald-400" />
+            <span>Includes melt value + dealer band + inputs</span>
+          </li>
+          <li className="flex gap-2">
+            <span className="mt-1 inline-block h-1.5 w-1.5 rounded-full bg-emerald-400" />
+            <span>Timestamped valuation for documentation</span>
+          </li>
+          <li className="flex gap-2">
+            <span className="mt-1 inline-block h-1.5 w-1.5 rounded-full bg-emerald-400" />
+            <span>More export formats later (Pro)</span>
+          </li>
+        </ul>
+
+        <div className="mt-5 flex flex-col gap-2 sm:flex-row">
+          {pdfLocked ? (
+            <button
+              type="button"
+              onClick={handleCheckoutStart}
+              className="inline-flex items-center justify-center rounded-full bg-emerald-600/90 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-500"
+            >
+              Unlock PDF
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={handleDownloadPdf}
+              className="inline-flex items-center justify-center rounded-full bg-emerald-600/90 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-500"
+            >
+              Download PDF
+            </button>
+          )}
+
+          <button
+            type="button"
+            onClick={() => {
+              const el = document.getElementById("pro-waitlist");
+              if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+            }}
+            className="inline-flex items-center justify-center rounded-full border border-emerald-500/40 bg-slate-950 px-4 py-2 text-sm font-medium text-emerald-200 hover:bg-slate-900"
+          >
+            Learn more
+          </button>
+        </div>
+
+        <p className="mt-2 text-[12px] text-slate-400">
+          No Stripe yet — “Unlock” is tracked for demand and simulates access locally.
+        </p>
       </div>
     </div>
   );
