@@ -104,7 +104,9 @@ export default function GoldCalculatorPage() {
 
         {/* CALCULATOR CARD */}
         <section className="rounded-2xl border border-slate-800 bg-slate-900/60 p-6">
-          <GoldCalculator showSaveControls onSave={handleSave} />
+          <GoldCalculator showSaveControls onSave={handleSave} lockMode="pdf" freeValuations={1} />
+
+
 
           {saveMessage && (
             <p className="mt-3 text-xs text-emerald-300">{saveMessage}</p>
