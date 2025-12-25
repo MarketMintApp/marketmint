@@ -46,6 +46,7 @@ const KARAT_OPTIONS = [
   { label: "22K", value: 22 },
   { label: "24K (pure)", value: 24 },
 ];
+const PDF_UNLOCK_KEY = "mm_pdf_unlocked_v1";
 
 const METAL_OPTIONS = [
   { label: "Gold", value: "gold" },
@@ -117,7 +118,16 @@ export default function GoldCalculator({
   // Track "viewed" once per session when premium PDF panel is shown
   const premiumPanelRef = useRef<HTMLDivElement | null>(null);
   const firedViewedRef = useRef<boolean>(false);
-
+/* ✅ RESTORE PDF UNLOCK ON PAGE LOAD */
+useEffect(() => {
+  try {
+    if (sessionStorage.getItem(PDF_UNLOCK_KEY) === "1") {
+      setPdfUnlocked(true);
+    }
+  } catch {
+    // ignore storage errors
+  }
+}, []);
   useEffect(() => {
     if (lockMode !== "pdf") return;
     if (!premiumPanelRef.current) return;
@@ -191,7 +201,9 @@ Notes: ${notes || "None"}
       free_valuations: freeValuations,
       metal_type: metalType,
     });
-
+ try {
+    sessionStorage.setItem(PDF_UNLOCK_KEY, "1");
+  } catch {}
     // V1: no Stripe yet — simulate unlock to validate flow
     setPdfUnlocked(true);
   }
