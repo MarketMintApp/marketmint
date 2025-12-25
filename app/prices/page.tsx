@@ -1,31 +1,33 @@
-import type { Metadata } from "next";
+// app/prices/page.tsx
 import PricesHub from "./PricesHub";
 
-export const metadata: Metadata = {
-  title: "Live Precious Metal Prices by Purity",
+export const metadata = {
+  title: "Live Precious Metal Prices by Purity | MarketMint",
   description:
-    "Compare gold, silver, and platinum prices by purity (10K, 14K, 18K, 24K, .925, .999, .950). Estimate melt value quickly and understand how purity affects price.",
-  alternates: { canonical: "/prices" },
+    "Live spot prices and estimated melt prices by purity for gold, silver, and platinum. Updated on a cached schedule to reduce upstream calls.",
 };
 
 export default function PricesPage() {
   return (
     <main className="min-h-screen bg-slate-950 text-slate-50">
-      <div className="mx-auto max-w-6xl px-4 pb-16 pt-10 space-y-8">
-        <header className="space-y-2">
+      <div className="mx-auto max-w-5xl px-4 pb-16 pt-10 space-y-10">
+        {/* HERO */}
+        <section className="space-y-3">
           <p className="text-xs font-semibold uppercase tracking-[0.16em] text-emerald-300">
-            MarketMint Prices Hub
+            MARKETMINT PRICES HUB
           </p>
-          <h1 className="text-3xl font-semibold">
+
+          <h1 className="text-4xl font-semibold tracking-tight md:text-5xl">
             Live Precious Metal Prices by Purity
           </h1>
-          <p className="max-w-3xl text-sm text-slate-300">
-            Compare estimated melt prices across common purities (gold karat, silver
-            fineness, platinum fineness). These are informational estimates — actual
-            buyer offers can be lower due to fees, verification, and margin.
-          </p>
-        </header>
 
+          <p className="max-w-3xl text-sm text-slate-300 leading-relaxed">
+            Compare estimated melt prices across common purities (gold karat, silver fineness, platinum fineness).
+            These are informational estimates — real buyer offers can be lower due to fees, verification, and margin.
+          </p>
+        </section>
+
+        {/* CONTENT */}
         <PricesHub />
       </div>
     </main>

@@ -70,10 +70,8 @@ export default function AppHeader() {
 
     async function init() {
       try {
-        // IMPORTANT: getSession() is safe when logged out (no AuthSessionMissingError)
         const { data, error } = await supabase.auth.getSession();
         if (error) {
-          // treat as logged out; don't throw noisy overlay errors
           setLoggedOutState();
           return;
         }
@@ -93,7 +91,6 @@ export default function AppHeader() {
 
     init();
 
-    // Also react immediately to login/logout (no need to wait for navigation)
     const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
       const user = session?.user ?? null;
 
@@ -102,7 +99,6 @@ export default function AppHeader() {
         return;
       }
 
-      // When user logs in, load counts
       loadForUser(user.id, user.email ?? null);
     });
 
@@ -110,7 +106,6 @@ export default function AppHeader() {
       cancelled = true;
       sub.subscription.unsubscribe();
     };
-    // Refresh stats on route changes (after inserts/deletes), but session lookup is safe
   }, [pathname]);
 
   function navClass(path: string) {
@@ -148,6 +143,12 @@ export default function AppHeader() {
         <nav className="hidden gap-2 sm:flex">
           <Link href="/value" className={navClass("/value")}>
             Workspace
+          </Link>
+          <Link href="/prices" className={navClass("/prices")}>
+            Prices
+          </Link>
+          <Link href="/gold" className={navClass("/gold")}>
+            Gold Calc
           </Link>
           <Link href="/items" className={navClass("/items")}>
             My Items
