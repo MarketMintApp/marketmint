@@ -74,7 +74,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-slate-950 text-slate-50`}
       >
-        {/* GA4 (wrap to satisfy Next prerender + useSearchParams requirements) */}
+        {/* GA4 */}
         <Suspense fallback={null}>
           <AnalyticsProvider />
         </Suspense>
@@ -84,6 +84,19 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 
         {/* Page Content */}
         <main className="min-h-screen">{children}</main>
+
+        {/* Global Footer (required for AdSense + legal) */}
+        <footer className="border-t border-slate-800 bg-slate-950 py-6 text-center text-xs text-slate-400">
+          <a href="/privacy" className="mx-3 hover:underline">
+            Privacy
+          </a>
+          <a href="/terms" className="mx-3 hover:underline">
+            Terms
+          </a>
+          <a href="/disclaimer" className="mx-3 hover:underline">
+            Disclaimer
+          </a>
+        </footer>
       </body>
     </html>
   );
