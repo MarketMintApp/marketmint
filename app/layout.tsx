@@ -71,9 +71,17 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-slate-950 text-slate-50`}
-      >
+  <head>
+    <script
+      async
+      src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7541548603538723"
+      crossOrigin="anonymous"
+    />
+  </head>
+  <body
+    className={`${geistSans.variable} ${geistMono.variable} antialiased bg-slate-950 text-slate-50`}
+  >
+
         {/* GA4 */}
         <Suspense fallback={null}>
           <AnalyticsProvider />
