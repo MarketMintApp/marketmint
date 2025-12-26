@@ -221,10 +221,45 @@ Notes: ${notes || "None"}
     setPdfUnlocked(true);
   }
 
-  function handleDownloadPdf() {
-    // Placeholder: wire real PDF export in Step 6.B.
-    window.print();
+  async function handleDownloadPdf() {
+  try {
+    const payload = {
+      metalType,
+      karat,
+      weightGrams: weightGrams || "",
+      spotPrice: spotPrice || "",
+      meltValue: resultsReady ? formatMoney(meltValue) : "—",
+      dealerLow: resultsReady ? formatMoney(dealerLow) : "—",
+      dealerHigh: resultsReady ? formatMoney(dealerHigh) : "—",
+      notes: notes || "",
+      createdAtISO: new Date().toISOString(),
+    };
+
+    const res = await fetch("/api/pdf/valuation", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    if (!res.ok) throw new Error(`PDF request failed: ${res.status}`);
+
+    const blob = await res.blob();
+    const url = window.URL.createObjectURL(blob);
+
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "marketmint-valuation.pdf";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+
+    window.URL.revokeObjectURL(url);
+  } catch (e) {
+    console.error(e);
+    alert("Could not generate the PDF. Please try again.");
   }
+}
+
 
   const karatLabel =
     metalType === "gold" ? "Karat" : "Purity (assumes pure for now)";
