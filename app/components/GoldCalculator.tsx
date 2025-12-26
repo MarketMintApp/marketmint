@@ -2,6 +2,8 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { trackEvent } from "../lib/analytics";
+import AdSlot from "./AdSlot";
+
 
 type LockMode = "none" | "pdf" | "afterN";
 
@@ -21,9 +23,9 @@ type GoldCalculatorProps = {
   }) => void;
 
   /**
-   * New paywall model:
+   * Paywall model:
    * - "none": everything free
-   * - "pdf": melt value stays free, PDF export is premium (Option 1)
+   * - "pdf": melt value stays free, PDF export is premium
    * - "afterN": reserved for later (not enforced in this step)
    */
   lockMode?: LockMode;
@@ -46,7 +48,6 @@ const KARAT_OPTIONS = [
   { label: "22K", value: 22 },
   { label: "24K (pure)", value: 24 },
 ];
-const PDF_UNLOCK_KEY = "mm_pdf_unlocked_v1";
 
 const METAL_OPTIONS = [
   { label: "Gold", value: "gold" },
@@ -54,6 +55,12 @@ const METAL_OPTIONS = [
   { label: "Platinum", value: "platinum" },
 ];
 
+const PDF_UNLOCK_KEY = "mm_pdf_unlocked_v1";
+
+/**
+ * IMPORTANT: pricing math stays exactly the same.
+ * Do not change this function unless we explicitly revise model assumptions.
+ */
 function calculateMeltValue(karat: number, grams: number, spotPrice: number) {
   if (!karat || !grams || !spotPrice) return 0;
 
@@ -118,16 +125,18 @@ export default function GoldCalculator({
   // Track "viewed" once per session when premium PDF panel is shown
   const premiumPanelRef = useRef<HTMLDivElement | null>(null);
   const firedViewedRef = useRef<boolean>(false);
-/* ✅ RESTORE PDF UNLOCK ON PAGE LOAD */
-useEffect(() => {
-  try {
-    if (sessionStorage.getItem(PDF_UNLOCK_KEY) === "1") {
-      setPdfUnlocked(true);
+
+  // Restore PDF unlock on page load
+  useEffect(() => {
+    try {
+      if (sessionStorage.getItem(PDF_UNLOCK_KEY) === "1") {
+        setPdfUnlocked(true);
+      }
+    } catch {
+      // ignore storage errors
     }
-  } catch {
-    // ignore storage errors
-  }
-}, []);
+  }, []);
+
   useEffect(() => {
     if (lockMode !== "pdf") return;
     if (!premiumPanelRef.current) return;
@@ -183,7 +192,9 @@ useEffect(() => {
     const text = `
 ${metalType.charAt(0).toUpperCase() + metalType.slice(1)} Valuation — ${karat}K, ${weightGrams}g
 Melt value: ${melt}
-Dealer offer (85–90%): ${formatMoney(dealerLowLocal)} – ${formatMoney(dealerHighLocal)}
+Dealer offer (85–90%): ${formatMoney(dealerLowLocal)} – ${formatMoney(
+      dealerHighLocal
+    )}
 Spot price used: $${spotPrice}
 Notes: ${notes || "None"}
 `.trim();
@@ -201,176 +212,200 @@ Notes: ${notes || "None"}
       free_valuations: freeValuations,
       metal_type: metalType,
     });
- try {
-    sessionStorage.setItem(PDF_UNLOCK_KEY, "1");
-  } catch {}
+
+    try {
+      sessionStorage.setItem(PDF_UNLOCK_KEY, "1");
+    } catch {}
+
     // V1: no Stripe yet — simulate unlock to validate flow
     setPdfUnlocked(true);
   }
 
   function handleDownloadPdf() {
     // Placeholder: wire real PDF export in Step 6.B.
-    // This gives a “download-ish” action now.
     window.print();
   }
 
+  const karatLabel =
+    metalType === "gold" ? "Karat" : "Purity (assumes pure for now)";
+
+  const showPurityHelper = metalType !== "gold";
+
+  const resultsReady = meltValue > 0;
+
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       {showHeading && (
-        <h2 className="text-xl font-semibold">Metal Value Calculator</h2>
+        <h2 className="text-xl font-semibold text-slate-50">
+          Metal Value Calculator
+        </h2>
       )}
 
-      {/* Inputs row */}
-      <div className="grid gap-3 md:grid-cols-4">
-        {/* Metal */}
-        <div className="space-y-1">
-          <label className="block text-xs font-medium text-slate-300 uppercase tracking-wide">
-            Metal
-          </label>
-          <select
-            className="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm outline-none 
-           focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400"
-            value={metalType}
-            onChange={(e) => {
-              const value = e.target.value;
-              setMetalType(value);
-              // For non-gold metals, default to pure metal for now
-              if (value !== "gold") {
-                setKarat(24);
-              }
-            }}
-          >
-            {METAL_OPTIONS.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-        </div>
+      {/* INPUTS */}
+      <div className="rounded-2xl border border-slate-800 bg-slate-950/40 p-4">
+        <div className="grid gap-3 md:grid-cols-4">
+          {/* Metal */}
+          <div className="space-y-1.5">
+            <label className="block text-xs font-medium text-slate-300 uppercase tracking-wide">
+              Metal
+            </label>
+            <select
+              className="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm outline-none focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400"
+              value={metalType}
+              onChange={(e) => {
+                const value = e.target.value;
+                setMetalType(value);
 
-        {/* Karat / purity */}
-        <div className="space-y-1">
-          <label className="block text-xs font-medium text-slate-300 uppercase tracking-wide leading-tight">
-            {metalType === "gold" ? (
-              "Karat"
-            ) : (
-              <>
-                PURITY
-                <span className="block text-[10px] text-slate-400 normal-case">
-                  (assuming 24K / pure for now)
-                </span>
-              </>
+                // For non-gold metals, default to pure metal for now
+                if (value !== "gold") setKarat(24);
+              }}
+            >
+              {METAL_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Karat / purity */}
+          <div className="space-y-1.5">
+            <label className="block text-xs font-medium text-slate-300 uppercase tracking-wide">
+              {karatLabel}
+            </label>
+
+            {showPurityHelper && (
+              <p className="text-[10px] text-slate-400 leading-tight">
+                Silver &amp; platinum are treated as pure for now (24K equivalent).
+              </p>
             )}
-          </label>
-          <select
-            className="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm outline-none focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400 disabled:opacity-60"
-            value={karat}
-            onChange={(e) => setKarat(Number(e.target.value))}
-            disabled={metalType !== "gold"}
-          >
-            {KARAT_OPTIONS.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
+
+            <select
+              className="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm outline-none focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400 disabled:opacity-60"
+              value={karat}
+              onChange={(e) => setKarat(Number(e.target.value))}
+              disabled={metalType !== "gold"}
+            >
+              {KARAT_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Weight */}
+          <div className="space-y-1.5">
+            <label className="block text-xs font-medium text-slate-300 uppercase tracking-wide">
+              Weight (grams)
+            </label>
+            <input
+              type="number"
+              min="0"
+              step="0.01"
+              className="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm outline-none focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400"
+              placeholder="e.g. 45"
+              value={weightGrams}
+              onChange={(e) => setWeightGrams(e.target.value)}
+            />
+          </div>
+
+          {/* Spot price */}
+          <div className="space-y-1.5">
+            <label className="block text-xs font-medium text-slate-300 uppercase tracking-wide">
+              Spot price (USD / troy oz)
+            </label>
+            <input
+              type="number"
+              min="0"
+              step="1"
+              className="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm outline-none focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400"
+              placeholder="e.g. 2400"
+              value={spotPrice}
+              onChange={(e) => setSpotPrice(e.target.value)}
+            />
+          </div>
         </div>
 
-        {/* Weight */}
-        <div className="space-y-1">
-          <label className="block text-xs font-medium text-slate-300 uppercase tracking-wide">
-            Weight (grams)
-          </label>
-          <input
-            type="number"
-            min="0"
-            step="0.01"
-            className="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm outline-none focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400"
-            placeholder="e.g. 45"
-            value={weightGrams}
-            onChange={(e) => setWeightGrams(e.target.value)}
-          />
-        </div>
-
-        {/* Spot price */}
-        <div className="space-y-1">
-          <label className="block text-xs font-medium text-slate-300 uppercase tracking-wide">
-            Spot Price (USD / troy oz)
-          </label>
-          <input
-            type="number"
-            min="0"
-            step="1"
-            className="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-sm outline-none focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400"
-            placeholder="e.g. 2400"
-            value={spotPrice}
-            onChange={(e) => setSpotPrice(e.target.value)}
-          />
-        </div>
+        <p className="mt-3 text-xs text-slate-400 leading-relaxed">
+          Melt value is a baseline estimate from spot price × purity × weight. Real offers can be
+          lower due to testing, refining, and buyer margin.
+        </p>
       </div>
 
-      {/* Results + save area (NEVER locked in Option 1) */}
-      <div className="mt-3 rounded-xl border border-emerald-500/40 bg-emerald-500/5 px-4 py-3">
-        <p className="text-xs font-medium uppercase tracking-wide text-emerald-300">
-          Estimated melt value
-        </p>
+      {/* RESULTS (NEVER locked in Option 1) */}
+      <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/5 p-4">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-emerald-300">
+              Estimated melt value
+            </p>
 
-        {/* Animated melt value */}
-        <p
-          key={meltValue} // force remount when value changes
-          className="mt-1 text-2xl font-semibold"
-          style={{
-            animation: meltValue > 0 ? "fadeSlide 0.4s ease-out" : "none",
-          }}
-        >
-          {meltValue > 0 ? formatMoney(meltValue) : "—"}
-        </p>
+            <p
+              key={meltValue}
+              className="mt-1 text-3xl font-semibold text-slate-50"
+              style={{
+                animation: resultsReady ? "fadeSlide 0.4s ease-out" : "none",
+              }}
+            >
+              {resultsReady ? formatMoney(meltValue) : "—"}
+            </p>
 
-        <p className="mt-1 text-[11px] text-slate-400">
-          This is an estimate based on melt value only. Buyers typically pay less
-          to cover refining, risk, and margin.
-        </p>
+            <p className="mt-1 text-[11px] text-slate-400">
+              This estimate is melt value only — not a guaranteed payout.
+            </p>
 
-        {meltValue > 0 && (
-          <p className="mt-1 text-[11px] text-emerald-300">
-            Typical dealer offer (~85–90% of melt):{" "}
-            <span className="font-semibold">
-              {formatMoney(dealerLow)} – {formatMoney(dealerHigh)}
-            </span>
-          </p>
-        )}
+            {resultsReady && (
+              <p className="mt-2 text-[12px] text-emerald-200">
+                Typical dealer offer (~85–90% of melt):{" "}
+                <span className="font-semibold text-emerald-100">
+                  {formatMoney(dealerLow)} – {formatMoney(dealerHigh)}
+                </span>
+              </p>
+            )}
+          </div>
+
+          <div className="text-right">
+            <p className="text-[11px] text-slate-400">Spot used</p>
+            <p className="text-sm font-semibold text-slate-200">
+              {spotPrice ? `$${spotPrice}` : "—"}
+            </p>
+          </div>
+        </div>
 
         {showSaveControls && (
-          <div className="mt-3 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-            <div className="space-y-1 w-full md:w-1/2">
-              <p className="text-[11px] text-slate-400">
-                Save this valuation into your workspace to track items and build
-                reports later.
-              </p>
-              <label className="block text-[11px] font-medium text-slate-300 uppercase tracking-wide">
-                Notes (optional)
-              </label>
-              <input
-                type="text"
-                className="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-xs outline-none focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400"
-                placeholder="e.g. Mom&apos;s necklace"
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-              />
+          <div className="mt-4 grid gap-3 md:grid-cols-[1fr_auto] md:items-end">
+            <div className="space-y-2">
+              <div>
+                <p className="text-[11px] text-slate-400 leading-relaxed">
+                  Save valuations to your workspace so you can compare offers later.
+                </p>
+              </div>
+
+              <div className="space-y-1">
+                <label className="block text-[11px] font-medium text-slate-300 uppercase tracking-wide">
+                  Notes (optional)
+                </label>
+                <input
+                  type="text"
+                  className="w-full rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-xs outline-none focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400"
+                  placeholder="e.g. Mom’s necklace"
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                />
+              </div>
             </div>
 
-            {/* Buttons: Save + Copy */}
-            <div className="flex flex-col gap-2 md:flex-row md:items-center">
+            <div className="flex flex-col gap-2 md:flex-row md:justify-end">
               <button
                 type="button"
                 onClick={handleSave}
                 disabled={!canSave}
-                className={`inline-flex items-center justify-center rounded-full px-4 py-1.5 text-xs font-medium transition
-                  ${
-                    canSave
-                      ? "bg-emerald-500 text-slate-950 hover:bg-emerald-400"
-                      : "bg-slate-800 text-slate-500 cursor-not-allowed"
-                  }`}
+                className={`inline-flex items-center justify-center rounded-full px-4 py-2 text-xs font-semibold transition ${
+                  canSave
+                    ? "bg-emerald-500 text-slate-950 hover:bg-emerald-400"
+                    : "bg-slate-800 text-slate-500 cursor-not-allowed"
+                }`}
               >
                 Save valuation
               </button>
@@ -379,12 +414,11 @@ Notes: ${notes || "None"}
                 type="button"
                 onClick={handleCopy}
                 disabled={!canSave}
-                className={`inline-flex items-center justify-center rounded-full px-4 py-1.5 text-xs font-medium transition
-                  ${
-                    canSave
-                      ? "bg-slate-900 border border-slate-700 text-slate-200 hover:bg-slate-800"
-                      : "bg-slate-900/40 border border-slate-800 text-slate-600 cursor-not-allowed"
-                  }`}
+                className={`inline-flex items-center justify-center rounded-full px-4 py-2 text-xs font-semibold transition ${
+                  canSave
+                    ? "border border-slate-700 bg-slate-900 text-slate-200 hover:bg-slate-800"
+                    : "border border-slate-800 bg-slate-900/40 text-slate-600 cursor-not-allowed"
+                }`}
               >
                 Copy valuation
               </button>
@@ -393,48 +427,80 @@ Notes: ${notes || "None"}
         )}
 
         {lockResults ? (
-          <p className="mt-3 text-[11px] text-slate-400">
-            Note: lockResults is enabled, but melt value is intentionally not locked in Step 6.A (PDF export is the paid feature).
+          <p className="mt-3 text-[11px] text-slate-500">
+            Note: lockResults is enabled, but melt value is intentionally not locked (PDF export is
+            the paid feature).
           </p>
         ) : null}
       </div>
+{/* ADS (gated) */}
+{process.env.NEXT_PUBLIC_ADS_ENABLED === "true" ? (
+  <div className="pt-2">
+    {/* PROD_MARKER: gold_calc_mid_v1 */}
+    <AdSlot placement="gold_calc_mid" />
+  </div>
+) : null}
 
-      {/* Premium “Download PDF” panel (this is the ONLY paid gate) */}
+      {/* PREMIUM PDF (ONLY paid gate) */}
       <div
         ref={premiumPanelRef}
         className="rounded-2xl border border-emerald-500/20 bg-slate-950/40 p-5 shadow-sm"
       >
         <div className="flex items-start justify-between gap-4">
-          <div>
+          <div className="space-y-1">
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-emerald-300">
               Premium export
             </p>
-            <h3 className="mt-1 text-lg font-semibold text-slate-50">
-              Download PDF valuation
+            <h3 className="text-lg font-semibold text-slate-50">
+              Download a PDF valuation
             </h3>
-            <p className="mt-1 text-sm text-slate-300">
-              Clean, shareable PDF summary for records or sending to a buyer/jeweler.
+            <p className="text-sm text-slate-300 leading-relaxed">
+              Clean, shareable summary for your records or sending to a jeweler/buyer.
             </p>
           </div>
+
           <div className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-sm font-semibold text-emerald-200">
             {pdfPriceText}
           </div>
         </div>
 
-        <ul className="mt-4 space-y-2 text-sm text-slate-200">
-          <li className="flex gap-2">
-            <span className="mt-1 inline-block h-1.5 w-1.5 rounded-full bg-emerald-400" />
-            <span>Includes melt value + dealer band + inputs</span>
-          </li>
-          <li className="flex gap-2">
-            <span className="mt-1 inline-block h-1.5 w-1.5 rounded-full bg-emerald-400" />
-            <span>Timestamped valuation for documentation</span>
-          </li>
-          <li className="flex gap-2">
-            <span className="mt-1 inline-block h-1.5 w-1.5 rounded-full bg-emerald-400" />
-            <span>More export formats later (Pro)</span>
-          </li>
-        </ul>
+        <div className="mt-4 grid gap-3 sm:grid-cols-2">
+          <div className="rounded-xl border border-slate-800 bg-slate-950/40 p-3">
+            <p className="text-xs font-semibold text-slate-200">What’s inside</p>
+            <ul className="mt-2 space-y-2 text-sm text-slate-300">
+              <li className="flex gap-2">
+                <span className="mt-2 inline-block h-1.5 w-1.5 rounded-full bg-emerald-400" />
+                <span>Melt value + dealer band</span>
+              </li>
+              <li className="flex gap-2">
+                <span className="mt-2 inline-block h-1.5 w-1.5 rounded-full bg-emerald-400" />
+                <span>Inputs used (metal, karat, grams, spot)</span>
+              </li>
+              <li className="flex gap-2">
+                <span className="mt-2 inline-block h-1.5 w-1.5 rounded-full bg-emerald-400" />
+                <span>Timestamped valuation for documentation</span>
+              </li>
+            </ul>
+          </div>
+
+          <div className="rounded-xl border border-slate-800 bg-slate-950/40 p-3">
+            <p className="text-xs font-semibold text-slate-200">Why it helps</p>
+            <ul className="mt-2 space-y-2 text-sm text-slate-300">
+              <li className="flex gap-2">
+                <span className="mt-2 inline-block h-1.5 w-1.5 rounded-full bg-emerald-400" />
+                <span>Share with buyers without screenshots</span>
+              </li>
+              <li className="flex gap-2">
+                <span className="mt-2 inline-block h-1.5 w-1.5 rounded-full bg-emerald-400" />
+                <span>Keep records for multiple items</span>
+              </li>
+              <li className="flex gap-2">
+                <span className="mt-2 inline-block h-1.5 w-1.5 rounded-full bg-emerald-400" />
+                <span>More export formats later (Pro)</span>
+              </li>
+            </ul>
+          </div>
+        </div>
 
         <div className="mt-5 flex flex-col gap-2 sm:flex-row">
           {pdfLocked ? (
@@ -467,7 +533,7 @@ Notes: ${notes || "None"}
           </button>
         </div>
 
-        <p className="mt-2 text-[12px] text-slate-400">
+        <p className="mt-2 text-[12px] text-slate-400 leading-relaxed">
           No Stripe yet — “Unlock” is tracked for demand and simulates access locally.
         </p>
       </div>

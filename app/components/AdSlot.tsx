@@ -1,13 +1,16 @@
 "use client";
 
-type AdPlacement = "prices_mid";
+type AdPlacement = "prices_mid" | "gold_calc_mid" | "offers_mid" | "value_mid";
+
 
 /**
  * Map our internal placement names -> AdSense ad unit IDs
  * (the numeric ID you copied from AdSense for that unit)
  */
-const AD_SLOTS: Record<AdPlacement, string> = {
+const AD_SLOTS: Partial<Record<AdPlacement, string>> = {
   prices_mid: "4718619332",
+  gold_calc_mid: "YOUR_ADSENSE_UNIT_ID_HERE",
+  offers_mid: "YOUR_ADSENSE_UNIT_ID_HERE",
 };
 
 export default function AdSlot({

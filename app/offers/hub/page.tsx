@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
+import AdSlot from "../../components/AdSlot";
 import { supabase } from "../../lib/supabaseClient";
 import { useAuthGuard } from "../../lib/useAuthGuard";
 import {
@@ -240,14 +241,10 @@ export default function OffersHubPage() {
 
     list.sort((a, b) => {
       if (sortMode === "newest") {
-        return (
-          new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-        );
+        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
       }
       if (sortMode === "oldest") {
-        return (
-          new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
-        );
+        return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
       }
       if (sortMode === "highestAmount") {
         return b.amount - a.amount;
@@ -343,13 +340,9 @@ export default function OffersHubPage() {
         return;
       }
 
-      setOffers((prev) =>
-        prev.map((o) => (o.id === offerId ? { ...o, status } : o))
-      );
+      setOffers((prev) => prev.map((o) => (o.id === offerId ? { ...o, status } : o)));
 
-      setSelectedOffer((prev) =>
-        prev && prev.id === offerId ? { ...prev, status } : prev
-      );
+      setSelectedOffer((prev) => (prev && prev.id === offerId ? { ...prev, status } : prev));
     } finally {
       setDrawerBusy(false);
     }
@@ -358,9 +351,7 @@ export default function OffersHubPage() {
   async function deleteOffer(offerId: number) {
     if (!user || demoMode) return;
 
-    const confirmDelete = window.confirm(
-      "Delete this offer? This cannot be undone."
-    );
+    const confirmDelete = window.confirm("Delete this offer? This cannot be undone.");
     if (!confirmDelete) return;
 
     try {
@@ -390,9 +381,7 @@ export default function OffersHubPage() {
     return (
       <main className="min-h-screen bg-slate-950 text-slate-50">
         <div className="mx-auto flex min-h-screen max-w-5xl items-center justify-center px-4">
-          <p className="text-sm text-slate-400">
-            Checking your session and loading offers…
-          </p>
+          <p className="text-sm text-slate-400">Checking your session and loading offers…</p>
         </div>
       </main>
     );
@@ -402,9 +391,7 @@ export default function OffersHubPage() {
     return (
       <main className="min-h-screen bg-slate-950 text-slate-50">
         <div className="mx-auto flex min-h-screen max-w-5xl flex-col items-center justify-center px-4 text-center">
-          <h1 className="text-2xl font-semibold text-slate-50">
-            Offers Hub unavailable
-          </h1>
+          <h1 className="text-2xl font-semibold text-slate-50">Offers Hub unavailable</h1>
           <p className="mt-3 max-w-md text-sm text-slate-400">{error}</p>
           <button
             type="button"
@@ -427,26 +414,21 @@ export default function OffersHubPage() {
         <header className="flex flex-col gap-4 border-b border-slate-800 pb-6 md:flex-row md:items-end md:justify-between">
           <div>
             <div className="flex items-center gap-3">
-              <h1 className="text-3xl font-semibold tracking-tight">
-                Offers Hub
-              </h1>
+              <h1 className="text-3xl font-semibold tracking-tight">Offers Hub</h1>
               <span className="inline-flex items-center rounded-full border border-emerald-500/40 bg-emerald-500/10 px-3 py-1 text-[11px] font-medium uppercase tracking-wide text-emerald-200">
                 Beta
               </span>
             </div>
+
             <p className="mt-2 max-w-xl text-sm text-slate-300">
-              See every quote from jewelers, cash-for-gold shops, and private
-              buyers in one place. Sort by offer strength, buyer type, or
-              status to decide where to sell.
+              See every quote from jewelers, cash-for-gold shops, and private buyers in one place. Sort by offer
+              strength, buyer type, or status to decide where to sell.
             </p>
 
             {demoMode && (
               <p className="mt-2 text-xs text-emerald-300">
                 You&apos;re viewing sample offers based on a demo workspace.{" "}
-                <Link
-                  href="/login?redirect=/offers/hub"
-                  className="font-semibold underline underline-offset-2"
-                >
+                <Link href="/login?redirect=/offers/hub" className="font-semibold underline underline-offset-2">
                   Create a free account
                 </Link>{" "}
                 to log and track your own offers and buyers.
@@ -458,48 +440,29 @@ export default function OffersHubPage() {
                 <div className="inline-flex items-center gap-2 rounded-full border border-slate-700 bg-slate-900/60 px-3 py-1">
                   <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
                   <span className="font-medium">
-                    {summary.totalOffers} total offer
-                    {summary.totalOffers === 1 ? "" : "s"}
+                    {summary.totalOffers} total offer{summary.totalOffers === 1 ? "" : "s"}
                   </span>
-                  {summary.pendingCount > 0 && (
-                    <span className="text-slate-400">
-                      • {summary.pendingCount} pending
-                    </span>
-                  )}
+                  {summary.pendingCount > 0 && <span className="text-slate-400">• {summary.pendingCount} pending</span>}
                   {summary.acceptedCount > 0 && (
-                    <span className="text-slate-400">
-                      • {summary.acceptedCount} accepted
-                    </span>
+                    <span className="text-slate-400">• {summary.acceptedCount} accepted</span>
                   )}
                 </div>
 
                 {summary.avgPct != null && (
                   <div className="inline-flex items-center gap-2 rounded-full border border-emerald-600/70 bg-emerald-500/10 px-3 py-1 text-emerald-100">
-                    <span className="text-[10px] uppercase tracking-wide opacity-80">
-                      Avg offer vs melt
-                    </span>
-                    <span className="text-sm font-semibold">
-                      {formatPercent(summary.avgPct)}
-                    </span>
+                    <span className="text-[10px] uppercase tracking-wide opacity-80">Avg offer vs melt</span>
+                    <span className="text-sm font-semibold">{formatPercent(summary.avgPct)}</span>
                     {summary.bestPct != null && (
-                      <span className="text-slate-300">
-                        (best seen: {formatPercent(summary.bestPct)})
-                      </span>
+                      <span className="text-slate-300">(best seen: {formatPercent(summary.bestPct)})</span>
                     )}
                   </div>
                 )}
 
                 {summary.bestType && summary.bestTypeAvg != null && (
                   <div className="inline-flex items-center gap-2 rounded-full border border-slate-700 bg-slate-900/80 px-3 py-1 text-slate-200">
-                    <span className="text-[10px] uppercase tracking-wide opacity-80">
-                      Strongest category
-                    </span>
-                    <span className="font-medium">
-                      {BUYER_TYPE_LABEL[summary.bestType]}
-                    </span>
-                    <span className="text-slate-400">
-                      ({formatPercent(summary.bestTypeAvg)} avg)
-                    </span>
+                    <span className="text-[10px] uppercase tracking-wide opacity-80">Strongest category</span>
+                    <span className="font-medium">{BUYER_TYPE_LABEL[summary.bestType]}</span>
+                    <span className="text-slate-400">({formatPercent(summary.bestTypeAvg)} avg)</span>
                   </div>
                 )}
               </div>
@@ -529,24 +492,18 @@ export default function OffersHubPage() {
             <div className="flex items-center gap-2">
               <span className="text-[11px] text-slate-400">Status</span>
               <div className="inline-flex rounded-full border border-slate-700 bg-slate-900/80 p-1 text-[11px]">
-                {(["all", "pending", "accepted", "rejected"] as StatusFilter[]).map(
-                  (val) => (
-                    <button
-                      key={val}
-                      type="button"
-                      onClick={() => setStatusFilter(val)}
-                      className={`rounded-full px-2.5 py-1 font-medium transition ${
-                        statusFilter === val
-                          ? "bg-emerald-500 text-slate-950"
-                          : "text-slate-300 hover:bg-slate-800"
-                      }`}
-                    >
-                      {val === "all"
-                        ? "All"
-                        : val.charAt(0).toUpperCase() + val.slice(1)}
-                    </button>
-                  )
-                )}
+                {(["all", "pending", "accepted", "rejected"] as StatusFilter[]).map((val) => (
+                  <button
+                    key={val}
+                    type="button"
+                    onClick={() => setStatusFilter(val)}
+                    className={`rounded-full px-2.5 py-1 font-medium transition ${
+                      statusFilter === val ? "bg-emerald-500 text-slate-950" : "text-slate-300 hover:bg-slate-800"
+                    }`}
+                  >
+                    {val === "all" ? "All" : val.charAt(0).toUpperCase() + val.slice(1)}
+                  </button>
+                ))}
               </div>
             </div>
 
@@ -554,22 +511,18 @@ export default function OffersHubPage() {
             <div className="flex items-center gap-2">
               <span className="text-[11px] text-slate-400">Buyer</span>
               <div className="inline-flex rounded-full border border-slate-700 bg-slate-900/80 p-1 text-[11px]">
-                {(["all", "jeweler", "pawn", "private"] as BuyerFilter[]).map(
-                  (val) => (
-                    <button
-                      key={val}
-                      type="button"
-                      onClick={() => setBuyerFilter(val)}
-                      className={`rounded-full px-2.5 py-1 font-medium transition ${
-                        buyerFilter === val
-                          ? "bg-slate-100 text-slate-950"
-                          : "text-slate-300 hover:bg-slate-800"
-                      }`}
-                    >
-                      {val === "all" ? "All" : BUYER_TYPE_LABEL[val]}
-                    </button>
-                  )
-                )}
+                {(["all", "jeweler", "pawn", "private"] as BuyerFilter[]).map((val) => (
+                  <button
+                    key={val}
+                    type="button"
+                    onClick={() => setBuyerFilter(val)}
+                    className={`rounded-full px-2.5 py-1 font-medium transition ${
+                      buyerFilter === val ? "bg-slate-100 text-slate-950" : "text-slate-300 hover:bg-slate-800"
+                    }`}
+                  >
+                    {val === "all" ? "All" : BUYER_TYPE_LABEL[val]}
+                  </button>
+                ))}
               </div>
             </div>
           </div>
@@ -598,25 +551,27 @@ export default function OffersHubPage() {
                 className="h-8 w-full rounded-full border border-slate-700 bg-slate-950 pl-8 pr-3 text-xs text-slate-100 outline-none placeholder:text-slate-500 focus:border-emerald-400 md:w-56"
                 placeholder="Search buyer, metal, notes…"
               />
-              <span className="pointer-events-none absolute left-2 top-1.5 text-[12px] text-slate-500">
-                🔍
-              </span>
+              <span className="pointer-events-none absolute left-2 top-1.5 text-[12px] text-slate-500">🔍</span>
             </div>
           </div>
         </section>
+
+        {/* ADS (mid-page, gated) */}
+        {process.env.NEXT_PUBLIC_ADS_ENABLED === "true" ? (
+          <div className="mt-6">
+            {/* PROD_MARKER: offers_hub_mid_v1 */}
+            <AdSlot placement="offers_mid" />
+          </div>
+        ) : null}
 
         {/* LIST / EMPTY STATES */}
         <section className="mt-6 grid gap-5 md:grid-cols-[minmax(0,2fr)_minmax(0,1.25fr)]">
           <div className="rounded-xl border border-slate-800 bg-slate-900/40 p-4">
             <div className="flex items-center justify-between gap-2">
-              <h2 className="text-sm font-semibold text-slate-100">
-                All offers
-              </h2>
+              <h2 className="text-sm font-semibold text-slate-100">All offers</h2>
               <span className="text-[11px] text-slate-400">
                 {filteredOffers.length} shown
-                {hasOffers && filteredOffers.length !== offers.length
-                  ? ` of ${offers.length}`
-                  : ""}
+                {hasOffers && filteredOffers.length !== offers.length ? ` of ${offers.length}` : ""}
               </span>
             </div>
 
@@ -624,20 +579,15 @@ export default function OffersHubPage() {
 
             {loading && (
               <div className="flex h-40 items-center justify-center">
-                <p className="text-xs text-slate-400">
-                  Loading offers from your buyers…
-                </p>
+                <p className="text-xs text-slate-400">Loading offers from your buyers…</p>
               </div>
             )}
 
             {!loading && !hasOffers && (
               <div className="mt-4 space-y-3 rounded-lg border border-dashed border-slate-700 bg-slate-900/60 p-4 text-sm text-slate-300">
-                <p className="font-medium text-slate-100">
-                  No offers logged yet.
-                </p>
+                <p className="font-medium text-slate-100">No offers logged yet.</p>
                 <p className="text-xs text-slate-400">
-                  Track your quotes here so you can see who&apos;s really
-                  paying the best percentage of melt value.
+                  Track your quotes here so you can see who&apos;s really paying the best percentage of melt value.
                 </p>
                 <div className="flex flex-wrap gap-2 text-xs">
                   <Link
@@ -658,12 +608,8 @@ export default function OffersHubPage() {
 
             {!loading && hasOffers && filteredOffers.length === 0 && (
               <div className="mt-4 rounded-lg border border-dashed border-slate-700 bg-slate-900/60 p-4 text-xs text-slate-300">
-                <p className="font-medium text-slate-100">
-                  No offers match your filters.
-                </p>
-                <p className="mt-1 text-slate-400">
-                  Try resetting the status, buyer type, or search term above.
-                </p>
+                <p className="font-medium text-slate-100">No offers match your filters.</p>
+                <p className="mt-1 text-slate-400">Try resetting the status, buyer type, or search term above.</p>
               </div>
             )}
 
@@ -700,24 +646,23 @@ export default function OffersHubPage() {
                               {BUYER_TYPE_LABEL[offer.buyer_type]}
                             </span>
                           </div>
+
                           <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-slate-400">
                             <span>{formatDate(offer.created_at)}</span>
+
                             {metal && (
                               <span className="inline-flex items-center gap-1">
                                 <span className="h-[3px] w-[3px] rounded-full bg-slate-600" />
                                 <span>
                                   {metal}
                                   {v?.karat ? ` • ${v.karat}` : ""}
-                                  {v?.weight_gram
-                                    ? ` • ${v.weight_gram.toFixed(1)} g`
-                                    : ""}
+                                  {v?.weight_gram ? ` • ${v.weight_gram.toFixed(1)} g` : ""}
                                 </span>
                               </span>
                             )}
+
                             {offer.notes && (
-                              <span className="line-clamp-1 text-slate-500">
-                                “{offer.notes}”
-                              </span>
+                              <span className="line-clamp-1 text-slate-500">“{offer.notes}”</span>
                             )}
                           </div>
                         </div>
@@ -726,9 +671,7 @@ export default function OffersHubPage() {
                       {/* Right: money + status */}
                       <div className="flex flex-col items-end justify-between gap-2">
                         <div className="text-right">
-                          <div className="text-sm font-semibold text-emerald-200">
-                            {formatCurrency(offer.amount)}
-                          </div>
+                          <div className="text-sm font-semibold text-emerald-200">{formatCurrency(offer.amount)}</div>
                           <div className="mt-0.5 text-[11px] text-slate-400">
                             {melt != null && melt > 0 ? (
                               <>
@@ -750,6 +693,7 @@ export default function OffersHubPage() {
                             )}
                           </div>
                         </div>
+
                         <div className="flex items-center gap-2">
                           <span
                             className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold ${getStatusChipClass(
@@ -758,9 +702,7 @@ export default function OffersHubPage() {
                           >
                             {STATUS_LABEL[offer.status]}
                           </span>
-                          <span className="text-[11px] text-slate-500 group-hover:text-emerald-300">
-                            Details →
-                          </span>
+                          <span className="text-[11px] text-slate-500 group-hover:text-emerald-300">Details →</span>
                         </div>
                       </div>
                     </button>
@@ -774,9 +716,7 @@ export default function OffersHubPage() {
           <div className="rounded-xl border border-slate-800 bg-slate-950/70 p-4">
             {!selectedOffer && (
               <div className="flex h-full flex-col justify-center gap-3 text-sm text-slate-300">
-                <p className="font-medium text-slate-100">
-                  Select an offer to see the full breakdown.
-                </p>
+                <p className="font-medium text-slate-100">Select an offer to see the full breakdown.</p>
                 <ul className="space-y-1 text-xs text-slate-400">
                   <li>• Compare buyer types side-by-side.</li>
                   <li>• Mark offers accepted, pending, or rejected.</li>
@@ -790,9 +730,7 @@ export default function OffersHubPage() {
                 <div className="space-y-4">
                   <div className="flex items-start justify-between gap-3">
                     <div>
-                      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
-                        Offer from
-                      </p>
+                      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Offer from</p>
                       <div className="mt-1 flex items-center gap-2">
                         <span className="text-lg font-semibold text-slate-50">
                           {selectedOffer.buyer_name || "Unnamed buyer"}
@@ -803,15 +741,12 @@ export default function OffersHubPage() {
                           }`}
                         >
                           {BUYER_TYPE_ICON[selectedOffer.buyer_type]}{" "}
-                          <span className="ml-1">
-                            {BUYER_TYPE_LABEL[selectedOffer.buyer_type]}
-                          </span>
+                          <span className="ml-1">{BUYER_TYPE_LABEL[selectedOffer.buyer_type]}</span>
                         </span>
                       </div>
-                      <p className="mt-1 text-[11px] text-slate-400">
-                        Logged on {formatDate(selectedOffer.created_at)}
-                      </p>
+                      <p className="mt-1 text-[11px] text-slate-400">Logged on {formatDate(selectedOffer.created_at)}</p>
                     </div>
+
                     <button
                       type="button"
                       onClick={() => setSelectedOffer(null)}
@@ -822,9 +757,7 @@ export default function OffersHubPage() {
                   </div>
 
                   <div className="rounded-lg border border-slate-800 bg-slate-900/80 p-3">
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">
-                      Offer amount
-                    </p>
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">Offer amount</p>
                     <div className="mt-1 flex items-end justify-between gap-3">
                       <div>
                         <div className="text-2xl font-semibold text-emerald-200">
@@ -832,18 +765,15 @@ export default function OffersHubPage() {
                         </div>
                         <p className="mt-1 text-xs text-slate-400">
                           Status:{" "}
-                          <span className="font-medium text-slate-100">
-                            {STATUS_LABEL[selectedOffer.status]}
-                          </span>
+                          <span className="font-medium text-slate-100">{STATUS_LABEL[selectedOffer.status]}</span>
                         </p>
                       </div>
+
                       <div className="text-right text-xs text-slate-300">
-                        {selectedOffer.valuation?.melt_value != null &&
-                        selectedOffer.valuation.melt_value > 0 ? (
+                        {selectedOffer.valuation?.melt_value != null && selectedOffer.valuation.melt_value > 0 ? (
                           <>
                             <p className="text-[11px] text-slate-400">
-                              Melt value:{" "}
-                              {formatCurrency(selectedOffer.valuation.melt_value)}
+                              Melt value: {formatCurrency(selectedOffer.valuation.melt_value)}
                             </p>
                             <p className="mt-1 text-sm">
                               {selectedOffer.pctOfMelt != null ? (
@@ -868,9 +798,7 @@ export default function OffersHubPage() {
                             </p>
                           </>
                         ) : (
-                          <p className="text-[11px] text-slate-400">
-                            Melt value not available for this item.
-                          </p>
+                          <p className="text-[11px] text-slate-400">Melt value not available for this item.</p>
                         )}
                       </div>
                     </div>
@@ -884,24 +812,22 @@ export default function OffersHubPage() {
                       <div className="mt-1 text-xs text-slate-200">
                         <p className="font-medium">
                           {formatMetal(selectedOffer.valuation.metal_type)}{" "}
-                          {selectedOffer.valuation.karat &&
-                            `• ${selectedOffer.valuation.karat}`}
+                          {selectedOffer.valuation.karat && `• ${selectedOffer.valuation.karat}`}
                         </p>
+
                         <p className="mt-1 text-slate-400">
                           {selectedOffer.valuation.weight_gram != null
-                            ? `${selectedOffer.valuation.weight_gram.toFixed(
-                                1
-                              )} g • Spot ${formatCurrency(
+                            ? `${selectedOffer.valuation.weight_gram.toFixed(1)} g • Spot ${formatCurrency(
                                 selectedOffer.valuation.spot_price
                               )}`
                             : "No weight recorded"}
                         </p>
                       </div>
+
                       {selectedOffer.valuation.notes && (
-                        <p className="mt-2 text-[11px] text-slate-400">
-                          Notes: {selectedOffer.valuation.notes}
-                        </p>
+                        <p className="mt-2 text-[11px] text-slate-400">Notes: {selectedOffer.valuation.notes}</p>
                       )}
+
                       <Link
                         href={`/items?focus=${selectedOffer.valuation.id}`}
                         className="mt-3 inline-flex items-center text-[11px] font-medium text-emerald-300 hover:text-emerald-200"
@@ -915,13 +841,12 @@ export default function OffersHubPage() {
                     <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">
                       Status controls
                     </p>
+
                     <div className="flex flex-wrap gap-2 text-[11px]">
                       <button
                         type="button"
                         disabled={drawerBusy || demoMode}
-                        onClick={() =>
-                          updateOfferStatus(selectedOffer.id, "accepted")
-                        }
+                        onClick={() => updateOfferStatus(selectedOffer.id, "accepted")}
                         className={`rounded-full px-3 py-1 font-medium ${
                           selectedOffer.status === "accepted"
                             ? "bg-emerald-500 text-slate-950"
@@ -930,12 +855,11 @@ export default function OffersHubPage() {
                       >
                         Mark accepted
                       </button>
+
                       <button
                         type="button"
                         disabled={drawerBusy || demoMode}
-                        onClick={() =>
-                          updateOfferStatus(selectedOffer.id, "pending")
-                        }
+                        onClick={() => updateOfferStatus(selectedOffer.id, "pending")}
                         className={`rounded-full px-3 py-1 font-medium ${
                           selectedOffer.status === "pending"
                             ? "bg-amber-400 text-slate-950"
@@ -944,12 +868,11 @@ export default function OffersHubPage() {
                       >
                         Mark pending
                       </button>
+
                       <button
                         type="button"
                         disabled={drawerBusy || demoMode}
-                        onClick={() =>
-                          updateOfferStatus(selectedOffer.id, "rejected")
-                        }
+                        onClick={() => updateOfferStatus(selectedOffer.id, "rejected")}
                         className={`rounded-full px-3 py-1 font-medium ${
                           selectedOffer.status === "rejected"
                             ? "bg-rose-500 text-slate-50"
@@ -961,9 +884,7 @@ export default function OffersHubPage() {
                     </div>
 
                     {selectedOffer.notes && (
-                      <p className="mt-2 text-[11px] text-slate-400">
-                        Buyer notes: {selectedOffer.notes}
-                      </p>
+                      <p className="mt-2 text-[11px] text-slate-400">Buyer notes: {selectedOffer.notes}</p>
                     )}
                   </div>
                 </div>
@@ -973,16 +894,13 @@ export default function OffersHubPage() {
                     type="button"
                     disabled={drawerBusy || demoMode}
                     onClick={() => deleteOffer(selectedOffer.id)}
-                    className={`text-rose-400 hover:text-rose-300 ${
-                      demoMode ? "opacity-60 cursor-not-allowed" : ""
-                    }`}
+                    className={`text-rose-400 hover:text-rose-300 ${demoMode ? "opacity-60 cursor-not-allowed" : ""}`}
                   >
                     Delete this offer
                   </button>
+
                   {demoMode && (
-                    <p className="mt-2 text-[11px] text-slate-500">
-                      Demo mode: changes are disabled.
-                    </p>
+                    <p className="mt-2 text-[11px] text-slate-500">Demo mode: changes are disabled.</p>
                   )}
                 </div>
               </aside>

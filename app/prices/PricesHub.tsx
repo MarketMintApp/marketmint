@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import GoldCalculator from "../components/GoldCalculator";
 import AdSlot from "../components/AdSlot";
 
@@ -146,9 +147,15 @@ export default function PricesHub() {
           <div className="space-y-1">
             <h2 className="text-lg font-semibold text-slate-50">Spot Prices (USD / troy oz)</h2>
             <p className="text-xs text-slate-400">
-              These values come from our cached endpoint — so visitors won’t trigger upstream refreshes every time.
-            </p>
-          </div>
+  Live spot prices for gold, silver, and platinum (USD per troy ounce). Updated on a cached schedule for speed and reliability.
+  For item-level melt value, use the{" "}
+  <Link href="/gold" className="text-emerald-300 hover:underline">
+    gold calculator
+  </Link>
+  .
+</p>
+</div>
+
 
           <div className="flex flex-col items-start gap-2 md:items-end">
             <div className="text-xs text-slate-400">
