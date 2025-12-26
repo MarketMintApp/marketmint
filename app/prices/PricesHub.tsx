@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import GoldCalculator from "../components/GoldCalculator";
+import AdSlot from "../components/AdSlot";
 
 type MetalKey = "gold" | "silver" | "platinum";
 const GRAMS_PER_TROY_OUNCE = 31.1035;
@@ -199,6 +200,7 @@ export default function PricesHub() {
           </div>
         ) : null}
       </section>
+<AdSlot placement="prices_mid" />
 
       {/* PRICES TABLE (DARK, READABLE) */}
       <section className="rounded-2xl border border-slate-800 bg-slate-950 p-5">
