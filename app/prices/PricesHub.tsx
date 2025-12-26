@@ -200,6 +200,7 @@ export default function PricesHub() {
           </div>
         ) : null}
       </section>
+      {/* PROD_MARKER: prices_mid_v1 */}
 <AdSlot placement="prices_mid" />
 
       {/* PRICES TABLE (DARK, READABLE) */}
