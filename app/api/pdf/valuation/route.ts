@@ -122,6 +122,8 @@ export async function POST(req: Request) {
       headers: {
         "Content-Type": "application/pdf",
         "Content-Disposition": 'attachment; filename="marketmint-valuation.pdf"',
+        "Cache-Control": "no-store, max-age=0",
+    Pragma: "no-cache",
       },
     });
   } catch (err) {
