@@ -26,7 +26,7 @@ export default function HomeCtas({ placement = "home_final", className = "" }: P
           onClick={() => trackEvent("offers_demo_click", { placement })}
           className="inline-flex items-center rounded-full border border-emerald-500/60 bg-slate-950 px-4 py-2 text-sm font-medium text-emerald-200 hover:bg-slate-900"
         >
-          Explore offers demo
+          Explore Offers Hub
         </Link>
       </div>
     </div>

@@ -104,6 +104,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <a href="/disclaimer" className="mx-3 hover:underline">
             Disclaimer
           </a>
+          <div className="mt-3 text-slate-500">
+  © {new Date().getFullYear()} MarketMint
+</div>
+<div className="mt-1 text-slate-500">
+  Reference estimates only. Buyer offers may vary.
+</div>
         </footer>
       </body>
     </html>

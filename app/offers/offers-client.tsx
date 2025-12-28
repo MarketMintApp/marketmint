@@ -895,20 +895,6 @@ export default function OffersClient() {
                 >
                   Copy summary
                 </button>
-                <button
-                  type="button"
-                  disabled
-                  className="inline-flex items-center rounded-full border border-emerald-600/60 bg-slate-950 px-3 py-1 font-medium text-slate-300 opacity-80 cursor-not-allowed"
-                >
-                  Generate PDF (Pro)
-                </button>
-                <button
-                  type="button"
-                  disabled
-                  className="inline-flex items-center rounded-full border border-slate-700 bg-slate-950 px-3 py-1 font-medium text-slate-300 opacity-80 cursor-not-allowed"
-                >
-                  Send to buyers (Pro)
-                </button>
               </div>
             </div>
 
@@ -995,10 +981,10 @@ export default function OffersClient() {
               {demoMode ? (
                 <>
                   <p className="text-sm text-slate-400">
-                    This is demo data so you can see how MarketMint tracks real-world quotes.
+  You&apos;re viewing example offers.
                   </p>
                   <p className="mt-2 text-xs text-slate-400">
-                    Create a free account to log your own offers, track multiple items, and see live insights on your best deals.
+  Create a free account to log your own items and offers.
                   </p>
                   <Link
                     href="/login?redirect=/offers"

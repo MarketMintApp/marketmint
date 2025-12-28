@@ -45,9 +45,9 @@ function OutcomeCard({
 export default function HomePage() {
   return (
     <main className="min-h-screen bg-slate-950 text-slate-50">
-      <div className="mx-auto max-w-6xl px-4 pb-16 pt-10 space-y-16">
+      <div className="mx-auto max-w-6xl px-4 pb-16 pt-6 space-y-4">
         {/* HERO */}
-        <section className="grid gap-10 md:grid-cols-[1.2fr_0.8fr] md:items-start">
+        <section className="grid gap-6 md:grid-cols-[1.2fr_0.8fr] md:items-start">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-emerald-300">
               Melt value + pricing + offer tracking
@@ -60,10 +60,54 @@ export default function HomePage() {
             </h1>
 
             <p className="mt-4 max-w-xl text-sm leading-6 text-slate-300">
-              MarketMint gives you a simple “starting point” estimate: what the raw metal
-              in your item is worth (melt value). You can also compare common purities and
-              spot prices — then decide if it’s worth selling, and where.
+              MarketMint provides a reference melt-value estimate based on live spot prices. Use it to sanity-check offers and decide where to sell.
             </p>
+{/* MARKET SNAPSHOT */}
+<section className="rounded-2xl border border-white/10 bg-white/5 p-4">
+  <div className="flex items-center justify-between gap-4">
+    <div>
+      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-emerald-200/80">
+        Market snapshot
+      </p>
+      <p className="mt-1 text-sm text-white/70">
+        Quick reference prices. For full detail, use the Prices hub.
+      </p>
+    </div>
+
+    <a
+      href="/prices"
+      className="text-sm font-semibold text-emerald-300 hover:text-emerald-200"
+    >
+      View full prices →
+    </a>
+  </div>
+
+  <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+    <div className="rounded-xl border border-white/10 bg-slate-950/40 p-3">
+      <p className="text-xs text-white/60">Gold (spot)</p>
+      <p className="mt-1 text-lg font-semibold text-white">—</p>
+      <p className="mt-1 text-xs text-white/50">Live prices in Prices hub</p>
+    </div>
+
+    <div className="rounded-xl border border-white/10 bg-slate-950/40 p-3">
+      <p className="text-xs text-white/60">Silver (spot)</p>
+      <p className="mt-1 text-lg font-semibold text-white">—</p>
+      <p className="mt-1 text-xs text-white/50">Live prices in Prices hub</p>
+    </div>
+
+    <div className="rounded-xl border border-white/10 bg-slate-950/40 p-3">
+      <p className="text-xs text-white/60">S&amp;P 500</p>
+      <p className="mt-1 text-lg font-semibold text-white">—</p>
+      <p className="mt-1 text-xs text-white/50">Live prices in Prices hub</p>
+    </div>
+
+    <div className="rounded-xl border border-white/10 bg-slate-950/40 p-3">
+      <p className="text-xs text-white/60">Bitcoin</p>
+      <p className="mt-1 text-lg font-semibold text-white">—</p>
+      <p className="mt-1 text-xs text-white/50">Live prices in Prices hub</p>
+    </div>
+  </div>
+</section>
 
             {/* Primary CTA row (keeps your existing CTAs) */}
             <div className="mt-5 space-y-2">
@@ -87,7 +131,7 @@ export default function HomePage() {
                   href="/login"
                   className="inline-flex items-center text-sm font-medium text-slate-300 hover:text-white"
                 >
-                  Create account (optional)
+                  Create account
                 </Link>
               </div>
 
@@ -108,7 +152,7 @@ export default function HomePage() {
               </span>
               <span className="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-slate-900/40 px-3 py-1">
                 <span className="h-2 w-2 rounded-full bg-emerald-400" />
-                Offer tracking (optional)
+                Offer tracking
               </span>
             </div>
           </div>
@@ -144,16 +188,16 @@ export default function HomePage() {
                 cta="Go to the workspace"
                 badge="Power users"
               />
-              <OutcomeCard
+             
+            </div>
+          </div>
+        </section>
+ <OutcomeCard
                 title="See how offer tracking works"
                 description="Preview the offers flow without committing. Good for small resellers."
                 href="/offers"
                 cta="Explore the offers demo"
               />
-            </div>
-          </div>
-        </section>
-
         {/* SIMPLE EXPLAINER */}
         <section className="grid gap-6 md:grid-cols-3">
           <div className="rounded-2xl border border-slate-800 bg-slate-900/20 p-6">
@@ -184,7 +228,7 @@ export default function HomePage() {
             </p>
             <h3 className="mt-2 text-base font-semibold">Compare before you sell</h3>
             <p className="mt-2 text-sm leading-6 text-slate-300">
-              Use the prices hub for reference, then (optionally) track real offers so you
+              Use the prices hub for reference, then track real offers so you
               can quickly spot lowball quotes.
             </p>
           </div>

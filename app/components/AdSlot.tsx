@@ -35,7 +35,7 @@ export default function AdSlot({
   return (
     <div className={`my-6 flex justify-center ${className}`} aria-label={`ad-slot-${placement}`}>
       <div className="h-[90px] w-full max-w-3xl rounded-lg border border-slate-800 bg-slate-900/40 text-center text-xs text-slate-400 flex items-center justify-center">
-        Ad slot ({placement}) — unit {slot} (disabled placeholder)
+        Advertisement
       </div>
     </div>
   );

@@ -71,30 +71,16 @@ export default function PricesPage() {
           </h1>
 
           <p className="max-w-3xl text-sm text-slate-300 leading-relaxed">
-            View today’s precious metal prices broken down by purity — including gold karat, silver fineness,
-            and platinum purity. Prices are based on live spot markets and updated on a cached schedule to
-            reflect real-world melt value estimates as closely as possible.
+              Reference prices for common metals and purities, shown per gram and per troy ounce using live spot data.
           </p>
 
           <p className="max-w-3xl text-sm text-slate-300 leading-relaxed">
-            Want an exact valuation? Use our{" "}
-            <Link href="/gold" className="text-emerald-300 hover:underline">
-              gold calculator
-            </Link>{" "}
-            to calculate melt value instantly using weight, karat, and current spot price.
-          </p>
-
-          <div className="pt-4 space-y-2">
-            <h2 className="text-lg font-semibold text-slate-100">
-              How MarketMint Prices Work
-            </h2>
-            <p className="max-w-3xl text-sm text-slate-300 leading-relaxed">
-              MarketMint estimates melt value by applying purity percentages to live spot prices.
-              Actual buyer offers may be lower due to refining costs, verification, and dealer margins.
-              These estimates help you understand fair value before selling or buying.
-            </p>
-          </div>
-
+  For item-level melt value, use the{" "}
+  <Link href="/gold" className="text-emerald-300 hover:underline">
+    gold calculator
+  </Link>
+  .
+</p>
           <div className="pt-6 space-y-3">
             <h2 className="text-lg font-semibold text-slate-100">
               Precious Metal Pricing FAQs

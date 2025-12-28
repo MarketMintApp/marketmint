@@ -98,6 +98,7 @@ export default function GoldCalculator({
 
   // V1: no Stripe yet — local unlock for PDF only
   const [pdfUnlocked, setPdfUnlocked] = useState<boolean>(false);
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
 
   const meltValue = calculateMeltValue(
     karat,
@@ -222,6 +223,8 @@ Notes: ${notes || "None"}
   }
 
   async function handleDownloadPdf() {
+    if (!canExportPdf || isGeneratingPdf) return;
+    setIsGeneratingPdf(true);
   try {
     const payload = {
       metalType,
@@ -258,6 +261,7 @@ Notes: ${notes || "None"}
     console.error(e);
     alert("Could not generate the PDF. Please try again.");
   }
+  finally { setIsGeneratingPdf(false); }
 }
 
 
@@ -267,6 +271,7 @@ Notes: ${notes || "None"}
   const showPurityHelper = metalType !== "gold";
 
   const resultsReady = meltValue > 0;
+  const canExportPdf = resultsReady && weightGrams !== "" && spotPrice !== "";
 
   return (
     <div className="space-y-5">
@@ -484,7 +489,7 @@ Notes: ${notes || "None"}
         <div className="flex items-start justify-between gap-4">
           <div className="space-y-1">
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-emerald-300">
-              Premium export
+              Export a timestamped PDF valuation
             </p>
             <h3 className="text-lg font-semibold text-slate-50">
               Download a PDF valuation
@@ -550,9 +555,15 @@ Notes: ${notes || "None"}
             <button
               type="button"
               onClick={handleDownloadPdf}
+              disabled={!canExportPdf || isGeneratingPdf}
               className="inline-flex items-center justify-center rounded-full bg-emerald-600/90 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-500"
             >
-              Download PDF
+              {isGeneratingPdf
+  ? "Generating PDF…"
+  : !canExportPdf
+    ? "Enter weight to export PDF"
+    : "Export PDF ($4.99)"}
+
             </button>
           )}
 
@@ -569,7 +580,8 @@ Notes: ${notes || "None"}
         </div>
 
         <p className="mt-2 text-[12px] text-slate-400 leading-relaxed">
-          No Stripe yet — “Unlock” is tracked for demand and simulates access locally.
+          Export includes your inputs, the spot price used, and a dated valuation summary.
+
         </p>
       </div>
     </div>

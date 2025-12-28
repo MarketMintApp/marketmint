@@ -187,9 +187,6 @@ export default function AppHeader() {
             </>
           ) : (
             <>
-              <p className="hidden sm:block text-[11px] text-slate-400">
-                You're viewing demo mode.
-              </p>
               <Link
                 href="/login"
                 className="rounded-full bg-emerald-600/90 px-3 py-1 text-xs font-semibold text-white hover:bg-emerald-500"
