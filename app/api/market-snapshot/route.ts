@@ -25,13 +25,18 @@ async function fetchStooqClose(symbol: string): Promise<number | null> {
   }
 }
 
-export async function GET() {
+export async function GET(req: Request) {
   try {
+    const spotUrl = new URL("/api/spot", req.url);
+
     const [spotRes, spx, btc] = await Promise.all([
-      fetch(`${process.env.NEXT_PUBLIC_SITE_URL ?? ""}/api/spot`, { cache: "no-store" }),
+      fetch(spotUrl, { cache: "no-store" }),
       fetchStooqClose("^spx"),
       fetchStooqClose("btcusd"),
     ]);
+
+    // keep the rest of your existing logic BELOW this line
+
 
     let spot: any = null;
     if (spotRes.ok) spot = await spotRes.json();
