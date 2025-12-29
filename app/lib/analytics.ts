@@ -1,6 +1,10 @@
 // app/lib/analytics.ts
 
-export const GA_MEASUREMENT_ID = process.env.NEXT_PUBLIC_GA_ID || "";
+// Prefer the standard GA4 env var, but keep a fallback for older naming.
+export const GA_MEASUREMENT_ID =
+  process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID ||
+  process.env.NEXT_PUBLIC_GA_ID ||
+  "";
 
 // Narrow, explicit event names we care about
 export type AnalyticsEventName =
@@ -26,13 +30,28 @@ declare global {
  */
 export function isDebugEnabled() {
   if (typeof window === "undefined") return false;
+
   const qs = new URLSearchParams(window.location.search);
   const host = window.location.hostname;
-  return qs.get("debug") === "1" || host === "localhost" || host.endsWith(".vercel.app");
+
+  return (
+    qs.get("debug") === "1" ||
+    host === "localhost" ||
+    host.endsWith(".vercel.app")
+  );
 }
 
+/**
+ * Analytics is only "enabled" if we have BOTH:
+ * - a Measurement ID (so the provider should actually load GA)
+ * - window.gtag (so calls won't no-op)
+ */
 export function isAnalyticsEnabled() {
-  return typeof window !== "undefined" && !!window.gtag;
+  return (
+    typeof window !== "undefined" &&
+    !!GA_MEASUREMENT_ID &&
+    typeof window.gtag === "function"
+  );
 }
 
 /**
@@ -42,9 +61,10 @@ export function isAnalyticsEnabled() {
 export function trackPageView(url: string) {
   if (!isAnalyticsEnabled()) return;
 
-  window.gtag?.("event", "page_view", {
+  window.gtag!("event", "page_view", {
     page_location: window.location.href,
     page_path: url,
+    page_title: document?.title,
     debug_mode: isDebugEnabled(),
   });
 }
@@ -55,7 +75,7 @@ export function trackPageView(url: string) {
 export function trackEvent(name: AnalyticsEventName, params: GtagParams = {}) {
   if (!isAnalyticsEnabled()) return;
 
-  window.gtag?.("event", name, {
+  window.gtag!("event", name, {
     ...params,
     debug_mode: isDebugEnabled(),
   });
