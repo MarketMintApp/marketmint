@@ -169,11 +169,11 @@ export default function GoldCalculatorPage() {
         {/* CALCULATOR CARD */}
         <section className="rounded-2xl border border-slate-800 bg-slate-900/60 p-6 space-y-3">
           <GoldCalculator
-            showSaveControls
-            onSave={handleSave}
-            lockMode="pdf"
-            freeValuations={1}
-          />
+  showSaveControls
+  onSave={handleSave}
+  lockMode="pdf"
+/>
+
 
           {saveMessage && (
             <p className="text-xs text-emerald-300">{saveMessage}</p>

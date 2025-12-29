@@ -27,26 +27,29 @@ export async function POST(req: Request) {
     const origin = new URL(req.url).origin;
 
     const session = await stripe.checkout.sessions.create({
-      mode: "payment",
-      payment_method_types: ["card"],
-      allow_promotion_codes: false,
-      success_url: `${origin}/pdf/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${origin}/gold`,
-      line_items: [
-        {
-          quantity: 1,
-          price_data: {
-            currency: "usd",
-            unit_amount: 499,
-            product_data: {
-              name: "MarketMint Valuation PDF",
-              description: "One-time download (digital product).",
-            },
-          },
+  mode: "payment",
+  payment_method_types: ["card"],
+  allow_promotion_codes: false,
+  success_url: `${origin}/pdf/success?session_id={CHECKOUT_SESSION_ID}`,
+  cancel_url: `${origin}/gold`,
+  line_items: [
+    {
+      quantity: 1,
+      price_data: {
+        currency: "usd",
+        unit_amount: 499,
+        product_data: {
+          name: "MarketMint Valuation PDF",
+          description: "One-time download (digital product).",
         },
-      ],
-      metadata: { source },
-    });
+      },
+    },
+  ],
+  metadata: {
+    source,
+    product: "gold_pdf",
+  },
+});
 
     return NextResponse.json({ url: session.url }, { status: 200 });
   } catch (e: any) {

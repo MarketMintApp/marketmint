@@ -15,7 +15,11 @@ export type AnalyticsEventName =
   | "waitlist_submit_error"
   | "valuation_unlock_viewed"
   | "valuation_checkout_started"
+    | "pdf_success_viewed"
+  | "pdf_download_started"
+  | "pdf_success_error"
   | "valuation_checkout_completed";
+  
 
 type GtagParams = Record<string, any>;
 
