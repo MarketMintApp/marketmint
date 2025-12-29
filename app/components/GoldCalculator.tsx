@@ -348,6 +348,24 @@ Notes: ${notes || "None"}
               value={weightGrams}
               onChange={(e) => setWeightGrams(e.target.value)}
             />
+            {/* Weight helper */}
+<details className="mt-2 rounded-xl border border-slate-800 bg-slate-900/30 px-3 py-2">
+  <summary className="cursor-pointer text-xs font-medium text-slate-300 hover:text-slate-200">
+    Don’t know the weight? Quick tips
+  </summary>
+
+  <div className="mt-2 space-y-2 text-xs text-slate-300">
+    <ul className="list-disc space-y-1 pl-5">
+      <li>Best: use a kitchen scale and weigh in grams.</li>
+      <li>No scale: try a few scenarios (5g, 10g, 20g) to get a range.</li>
+      <li>1 oz ≈ 28.35 g.</li>
+    </ul>
+    <p className="text-slate-500">
+      Stones/clasps can inflate weight—melt value is for metal content only.
+    </p>
+  </div>
+</details>
+
           </div>
 
           {/* Spot price */}

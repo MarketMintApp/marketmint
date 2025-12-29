@@ -141,14 +141,14 @@ export default function AppHeader() {
 
         {/* Navigation */}
         <nav className="hidden gap-2 sm:flex">
-          <Link href="/value" className={navClass("/value")}>
-            Workspace
+          <Link href="/gold" className={navClass("/gold")}>
+            Gold Calc
           </Link>
           <Link href="/prices" className={navClass("/prices")}>
             Prices
           </Link>
-          <Link href="/gold" className={navClass("/gold")}>
-            Gold Calc
+          <Link href="/value" className={navClass("/value")}>
+            Workspace
           </Link>
           <Link href="/items" className={navClass("/items")}>
             My Items
