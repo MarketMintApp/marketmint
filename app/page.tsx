@@ -2,6 +2,13 @@
 import Link from "next/link";
 import ProWaitlistForm from "./components/ProWaitlistForm";
 import HomeCtas from "./components/HomeCtas";
+type MarketSnapshot = {
+  gold: number | null;
+  silver: number | null;
+  sp500: number | null;
+  bitcoin: number | null;
+  asOf?: string | null;
+};
 
 function OutcomeCard({
   title,
@@ -41,8 +48,29 @@ function OutcomeCard({
     </Link>
   );
 }
+async function getMarketSnapshot(): Promise<MarketSnapshot> {
+  try {
+    const res = await fetch(
+      `${process.env.NEXT_PUBLIC_SITE_URL ?? ""}/api/market-snapshot`,
+      { cache: "no-store" }
+    );
 
-export default function HomePage() {
+    if (!res.ok) throw new Error("snapshot fetch failed");
+    return await res.json();
+  } catch {
+    return {
+      gold: null,
+      silver: null,
+      sp500: null,
+      bitcoin: null,
+      asOf: null,
+    };
+  }
+}
+
+export default async function HomePage() {
+  const snapshot = await getMarketSnapshot();
+
   return (
     <main className="min-h-screen bg-slate-950 text-slate-50">
       <div className="mx-auto max-w-6xl px-4 pb-16 pt-6 space-y-4">
@@ -85,27 +113,40 @@ export default function HomePage() {
   <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
     <div className="rounded-xl border border-white/10 bg-slate-950/40 p-3">
       <p className="text-xs text-white/60">Gold (spot)</p>
-      <p className="mt-1 text-lg font-semibold text-white">—</p>
+      <p className="mt-1 text-lg font-semibold text-white">
+  {snapshot.gold != null ? `$${snapshot.gold.toFixed(2)}` : ""}
+</p>
       <p className="mt-1 text-xs text-white/50">Live prices in Prices hub</p>
     </div>
 
     <div className="rounded-xl border border-white/10 bg-slate-950/40 p-3">
       <p className="text-xs text-white/60">Silver (spot)</p>
-      <p className="mt-1 text-lg font-semibold text-white">—</p>
+     <p className="mt-1 text-lg font-semibold text-white">
+  {snapshot.silver != null ? `$${snapshot.silver.toFixed(2)}` : ""}
+</p>
       <p className="mt-1 text-xs text-white/50">Live prices in Prices hub</p>
     </div>
 
     <div className="rounded-xl border border-white/10 bg-slate-950/40 p-3">
-      <p className="text-xs text-white/60">S&amp;P 500</p>
-      <p className="mt-1 text-lg font-semibold text-white">—</p>
-      <p className="mt-1 text-xs text-white/50">Live prices in Prices hub</p>
-    </div>
+  <p className="text-xs text-white/60">S&amp;P 500</p>
+  <p className="mt-1 text-lg font-semibold text-white">
+    {snapshot.sp500 != null
+      ? `$${Math.round(snapshot.sp500).toLocaleString("en-US")}`
+      : "—"}
+  </p>
+  <p className="mt-1 text-xs text-white/50">Live prices in Prices hub</p>
+</div>
+
 
     <div className="rounded-xl border border-white/10 bg-slate-950/40 p-3">
-      <p className="text-xs text-white/60">Bitcoin</p>
-      <p className="mt-1 text-lg font-semibold text-white">—</p>
-      <p className="mt-1 text-xs text-white/50">Live prices in Prices hub</p>
-    </div>
+  <p className="text-xs text-white/60">Bitcoin</p>
+  <p className="mt-1 text-lg font-semibold text-white">
+    {snapshot.bitcoin != null
+      ? `$${Math.round(snapshot.bitcoin).toLocaleString("en-US")}`
+      : "—"}
+  </p>
+  <p className="mt-1 text-xs text-white/50">Live prices in Prices hub</p>
+</div>
   </div>
 </section>
 
