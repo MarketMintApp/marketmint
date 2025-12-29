@@ -1,29 +1,37 @@
+// app/api/checkout/route.ts
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string);
+function getStripe() {
+  const key = process.env.STRIPE_SECRET_KEY;
+
+  // IMPORTANT: don't throw at module eval time in Next builds
+  if (!key) return null;
+
+  return new Stripe(key, {
+ 
+  });
+}
 
 export async function POST(req: Request) {
   try {
-    const { source } = await req.json().catch(() => ({ source: "gold" }));
+    const stripe = getStripe();
+    if (!stripe) {
+      return NextResponse.json(
+        { error: "Missing STRIPE_SECRET_KEY (server env var not set)." },
+        { status: 500 }
+      );
+    }
 
-    // Prefer request origin; fall back to env; then localhost for dev
-    const origin =
-      req.headers.get("origin") ||
-      process.env.NEXT_PUBLIC_SITE_URL ||
-      "http://localhost:3000";
+    const { source } = await req.json().catch(() => ({ source: "gold" }));
+    const origin = new URL(req.url).origin;
 
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
       payment_method_types: ["card"],
       allow_promotion_codes: false,
-
-      // ✅ Redirect after payment
       success_url: `${origin}/pdf/success?session_id={CHECKOUT_SESSION_ID}`,
-
-      // ✅ Redirect if they cancel
       cancel_url: `${origin}/gold`,
-
       line_items: [
         {
           quantity: 1,
@@ -37,7 +45,6 @@ export async function POST(req: Request) {
           },
         },
       ],
-
       metadata: { source },
     });
 
