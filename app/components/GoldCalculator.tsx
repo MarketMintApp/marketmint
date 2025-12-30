@@ -204,29 +204,35 @@ Notes: ${notes || "None"}
       spot_price: Number(spotPrice || 0),
       melt_value: Number(meltValue || 0),
     });
-try {
-  const payload = {
-    metalType,
-    karat,
-    weightGrams: weightGrams || "",
-    spotPrice: spotPrice || "",
-    meltValue: resultsReady ? formatMoney(meltValue) : "—",
-    dealerLow: resultsReady ? formatMoney(dealerLow) : "—",
-    dealerHigh: resultsReady ? formatMoney(dealerHigh) : "—",
-    notes: notes || "",
-    createdAtISO: new Date().toISOString(),
-  };
+const payload = {
+  metalType,
+  karat,
+  weightGrams: weightGrams || "",
+  spotPrice: spotPrice || "",
+  meltValue: resultsReady ? formatMoney(meltValue) : "—",
+  dealerLow: resultsReady ? formatMoney(dealerLow) : "—",
+  dealerHigh: resultsReady ? formatMoney(dealerHigh) : "—",
+  notes: notes || "",
+  createdAtISO: new Date().toISOString(),
+  spotSource: "manual_or_live",
+};
 
+try {
   sessionStorage.setItem("mm_last_valuation_payload", JSON.stringify(payload));
 } catch {
   // ignore storage errors
 }
 
+
     try {
       const res = await fetch("/api/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ source: "gold" }),
+        body: JSON.stringify({
+  source: "gold",
+  payload, // <-- the exact payload you just built + stored
+}),
+
       });
 
       const data = await res.json();
