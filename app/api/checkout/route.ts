@@ -10,15 +10,24 @@ type CheckoutBody = {
 
 export const runtime = "nodejs";
 
+function jsonError(message: string, status = 500, details?: unknown) {
+  return NextResponse.json(
+    { error: message, ...(details ? { details } : {}) },
+    { status }
+  );
+}
+
 export async function POST(req: Request) {
   try {
-    // 1) Env checks (LOCAL DEV uses .env.local)
+    // 1) Env checks
     const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
     if (!stripeSecretKey) {
-      return NextResponse.json(
-        { error: "Missing STRIPE_SECRET_KEY in .env.local" },
-        { status: 500 }
-      );
+      return jsonError("Missing STRIPE_SECRET_KEY", 500);
+    }
+
+    const stripePriceId = process.env.STRIPE_PRICE_ID;
+    if (!stripePriceId) {
+      return jsonError("Missing STRIPE_PRICE_ID", 500);
     }
 
     const siteUrl =
@@ -31,23 +40,18 @@ export async function POST(req: Request) {
     try {
       body = (await req.json()) as CheckoutBody;
     } catch {
-      return NextResponse.json(
-        { error: "Invalid JSON body" },
-        { status: 400 }
-      );
+      return jsonError("Invalid JSON body", 400);
     }
 
     const source = body.source || "unknown";
     const payload = body.payload || {};
 
-    // 3) Stripe session
-    const stripe = new Stripe(stripeSecretKey, {
-      apiVersion: "2025-02-24.acacia" as any,
-    });
+    // 3) Stripe session (no pinned apiVersion; use Stripe account default)
+    const stripe = new Stripe(stripeSecretKey);
 
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
-      payment_method_types: ["card"],
+      // Stripe can infer payment methods; leaving this out reduces config drift.
       allow_promotion_codes: false,
       success_url: `${siteUrl}/pdf/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${siteUrl}/gold`,
@@ -57,15 +61,7 @@ export async function POST(req: Request) {
       },
       line_items: [
         {
-          price_data: {
-            currency: "usd",
-            product_data: {
-              name: "MarketMint Valuation PDF",
-              description:
-                "Timestamped documentation • includes inputs + spot price used • shareable record",
-            },
-            unit_amount: 499,
-          },
+          price: stripePriceId,
           quantity: 1,
         },
       ],
@@ -82,22 +78,12 @@ export async function POST(req: Request) {
       });
 
     if (dbErr) {
-      return NextResponse.json(
-        { error: "Supabase insert failed", details: dbErr.message },
-        { status: 500 }
-      );
+      return jsonError("Supabase insert failed", 500, dbErr.message);
     }
 
-    // 5) Return JSON (so the client res.json() works)
+    // 5) Return JSON
     return NextResponse.json({ url: session.url }, { status: 200 });
   } catch (e: any) {
-    // Always return JSON (no HTML _error page)
-    return NextResponse.json(
-      {
-        error: "Checkout route crashed",
-        details: e?.message || String(e),
-      },
-      { status: 500 }
-    );
+    return jsonError("Checkout route crashed", 500, e?.message || String(e));
   }
 }
