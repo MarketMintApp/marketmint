@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 
@@ -17,11 +17,43 @@ type VerifyResponse =
       status?: number | null;
     };
 
-function Pill({ children }: { children: React.ReactNode }) {
+function Pill({
+  tone = "emerald",
+  children,
+}: {
+  tone?: "emerald" | "slate" | "rose";
+  children: React.ReactNode;
+}) {
+  const styles =
+    tone === "emerald"
+      ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-200"
+      : tone === "rose"
+      ? "border-rose-500/30 bg-rose-500/10 text-rose-200"
+      : "border-slate-700 bg-slate-900/40 text-slate-200";
+
   return (
-    <span className="inline-flex items-center rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-xs font-medium text-emerald-200">
+    <span
+      className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-medium ${styles}`}
+    >
       {children}
     </span>
+  );
+}
+
+function MetaRow({
+  label,
+  value,
+}: {
+  label: string;
+  value: React.ReactNode;
+}) {
+  return (
+    <div className="flex items-start justify-between gap-3 rounded-xl border border-slate-800 bg-slate-950/30 px-4 py-3">
+      <div className="text-xs font-semibold tracking-wide text-slate-400">
+        {label}
+      </div>
+      <div className="text-sm font-medium text-slate-100">{value}</div>
+    </div>
   );
 }
 
@@ -38,15 +70,12 @@ export default function PdfSuccessClient() {
 
   const supportEmail = "marketmintapp@gmail.com";
 
-  const valuationPayload = (() => {
-  try {
-    const raw = sessionStorage.getItem("mm_last_valuation");
-    return raw ? JSON.parse(raw) : null;
-  } catch {
-    return null;
-  }
-})();
-
+  const receiptEmail = useMemo(() => {
+    if (verifyResult && "ok" in verifyResult && verifyResult.ok) {
+      return verifyResult.email ?? supportEmail;
+    }
+    return supportEmail;
+  }, [verifyResult]);
 
   /**
    * STEP 1 — VERIFY STRIPE SESSION
@@ -115,7 +144,7 @@ export default function PdfSuccessClient() {
   }, [sessionId]);
 
   /**
-   * STEP 2 — DOWNLOAD PDF
+   * STEP 2 — DOWNLOAD PDF (unchanged behavior)
    */
   async function handleDownloadPdf() {
     setDownloadError(null);
@@ -126,38 +155,32 @@ export default function PdfSuccessClient() {
       );
       return;
     }
-  // 🔽 STEP 3 — ADD THIS BLOCK EXACTLY HERE
-  let valuationPayload: any = null;
 
-  try {
-    const raw = sessionStorage.getItem("mm_last_valuation_payload");
-    if (raw) valuationPayload = JSON.parse(raw);
-  } catch {}
+    // Pull the payload from sessionStorage (current system behavior)
+    let valuationPayload: any = null;
+    try {
+      const raw = sessionStorage.getItem("mm_last_valuation_payload");
+      if (raw) valuationPayload = JSON.parse(raw);
+    } catch {}
 
-  if (!valuationPayload) {
-    setDownloadError(
-      "Valuation data not found. Please return to the Gold Calculator and try again."
-    );
-    return;
-  }
-  // 🔼 END STEP 3
+    if (!valuationPayload) {
+      setDownloadError(
+        "Valuation data not found. Please return to the Gold Calculator and try again."
+      );
+      return;
+    }
+
     try {
       setDownloading(true);
 
-      if (!valuationPayload) {
-  setDownloadError("Valuation data not found. Please return to the Gold Calculator and try again.");
-  setDownloading(false);
-  return;
-}
       const res = await fetch("/api/pdf/valuation", {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({
-    source: "gold_calc",
-    payload: valuationPayload,
-  }),
-});
-
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          source: "gold_calc",
+          payload: valuationPayload,
+        }),
+      });
 
       if (!res.ok) {
         const text = await res.text().catch(() => "");
@@ -182,67 +205,95 @@ export default function PdfSuccessClient() {
     }
   }
 
-  /**
-   * STEP 3 — UI
-   */
+  const statusPill = verifying ? (
+    <Pill tone="slate">Verifying purchase…</Pill>
+  ) : verified ? (
+    <Pill tone="emerald">Payment confirmed</Pill>
+  ) : (
+    <Pill tone="rose">Verification needed</Pill>
+  );
+
+  const headline = verifying
+    ? "Confirming your purchase"
+    : verified
+    ? "Your PDF valuation is ready"
+    : "We couldn’t verify this purchase";
+
+  const subhead = verifying
+    ? "This usually takes a couple seconds. Please keep this tab open."
+    : verified
+    ? "Download your valuation report below. If it doesn’t download, check your browser’s downloads folder and try again."
+    : "If you just completed checkout, refresh once. If it still fails, contact support and include the session ID below.";
+
   return (
     <main className="min-h-[80vh] bg-slate-950 text-slate-50">
       <div className="mx-auto max-w-5xl px-4 pb-16 pt-10">
         <div className="mx-auto max-w-2xl">
-          <div className="mb-4">
-            {verified ? <Pill>Purchase complete</Pill> : <Pill>Secure download</Pill>}
-          </div>
+          <div className="mb-4 flex items-center gap-2">{statusPill}</div>
 
-          <h1 className="text-3xl font-semibold tracking-tight">
-            {verified
-              ? "Payment confirmed — your PDF is ready"
-              : "PDF delivery"}
-          </h1>
-
-          <p className="mt-2 text-sm text-slate-300">
-            {verifying
-              ? "Verifying your purchase…"
-              : verified
-              ? "Your download is ready. Click below if it didn’t start automatically."
-              : "We couldn’t verify this session. If you just paid, try refreshing once."}
-          </p>
+          <h1 className="text-3xl font-semibold tracking-tight">{headline}</h1>
+          <p className="mt-2 text-sm text-slate-300">{subhead}</p>
 
           <div className="mt-8 rounded-2xl border border-slate-800 bg-slate-900/40 p-6">
-            <div className="flex flex-col gap-4 sm:flex-row sm:justify-between">
-              <div>
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+              <div className="min-w-0">
                 <div className="text-base font-semibold">
                   MarketMint Valuation PDF
                 </div>
                 <div className="mt-1 text-sm text-slate-300">
-                  Timestamped documentation • Inputs + spot price • Shareable record
-                </div>
-
-                <div className="mt-4 text-sm text-slate-300">
-                  {verifyResult && "ok" in verifyResult && verifyResult.ok ? (
-                    <>
-                      Receipt sent to{" "}
-                      <span className="font-medium text-slate-100">
-                        {verifyResult.email ?? supportEmail}
-                      </span>
-                    </>
-                  ) : (
-                    <>
-                      Need help? Email{" "}
-                      <span className="font-medium text-slate-100">
-                        {supportEmail}
-                      </span>
-                    </>
-                  )}
+                  Timestamped report • Inputs + spot price • Shareable record
                 </div>
               </div>
 
-              <div className="flex gap-2">
-                <span className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-xs font-semibold text-emerald-200">
-                  $4.99
-                </span>
-                <span className="rounded-full border border-slate-700 bg-slate-900/40 px-3 py-1 text-xs text-slate-200">
-                  One-time export
-                </span>
+              <div className="flex shrink-0 items-center gap-2">
+                <Pill tone="emerald">$4.99</Pill>
+                <Pill tone="slate">One-time export</Pill>
+              </div>
+            </div>
+
+            <div className="mt-5 grid gap-3">
+              <MetaRow
+                label="Receipt"
+                value={
+                  verified ? (
+                    <span className="text-slate-100">
+                      Sent to{" "}
+                      <span className="font-semibold">{receiptEmail}</span>
+                    </span>
+                  ) : (
+                    <span className="text-slate-200">
+                      Support:{" "}
+                      <a
+                        className="font-semibold text-slate-100 underline underline-offset-4"
+                        href={`mailto:${supportEmail}`}
+                      >
+                        {supportEmail}
+                      </a>
+                    </span>
+                  )
+                }
+              />
+
+              <MetaRow
+                label="Session ID"
+                value={
+                  sessionId ? (
+                    <span className="font-mono text-xs text-slate-200">
+                      {sessionId}
+                    </span>
+                  ) : (
+                    "—"
+                  )
+                }
+              />
+
+              <div className="rounded-2xl border border-slate-800 bg-slate-950/20 p-4">
+                <div className="text-sm font-semibold">What you received</div>
+                <ul className="mt-2 space-y-1 text-sm text-slate-300">
+                  <li>• Melt value estimate and dealer offer band</li>
+                  <li>• Inputs used (weight, karat, spot reference)</li>
+                  <li>• A clean PDF record you can save or share</li>
+                </ul>
               </div>
             </div>
 
@@ -259,8 +310,20 @@ export default function PdfSuccessClient() {
                 onClick={() => window.location.reload()}
                 className="rounded-full border border-slate-700 bg-slate-900/40 px-5 py-3 text-sm font-semibold"
               >
-                Refresh / Retry
+                Refresh verification
               </button>
+            </div>
+
+            <div className="mt-3 text-xs text-slate-400">
+              Having trouble? Try downloading again, then check your browser’s
+              downloads folder. If it still fails, email{" "}
+              <a
+                className="text-slate-200 underline underline-offset-4"
+                href={`mailto:${supportEmail}`}
+              >
+                {supportEmail}
+              </a>{" "}
+              and include the session ID.
             </div>
 
             {downloadError && (
@@ -270,12 +333,19 @@ export default function PdfSuccessClient() {
             )}
           </div>
 
-          <div className="mt-6 flex gap-3">
+          <div className="mt-6 flex flex-wrap gap-3">
             <Link
               href="/gold"
               className="rounded-full border border-slate-800 bg-slate-900/40 px-5 py-2.5 text-sm font-semibold"
             >
               Back to Gold Calc
+            </Link>
+
+            <Link
+              href="/offers"
+              className="rounded-full border border-slate-800 bg-slate-900/40 px-5 py-2.5 text-sm font-semibold"
+            >
+              Compare offers
             </Link>
 
             <Link

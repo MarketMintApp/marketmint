@@ -98,29 +98,85 @@ export async function POST(req: Request) {
     const dealerHighNum = toNumber(payload.dealerHigh);
 
     const notes = safeText(payload.notes);
-    const createdAtISO =
-      payload.createdAtISO?.trim() || new Date().toISOString();
+    const createdAtISO = payload.createdAtISO?.trim() || new Date().toISOString();
     const valuationId = makeValuationId(createdAtISO);
     const spotSource = safeText(payload.spotSource);
 
     /* -------------------- PDF SETUP -------------------- */
 
     const pdfDoc = await PDFDocument.create();
-    const page = pdfDoc.addPage([612, 792]);
+    const page = pdfDoc.addPage([612, 792]); // US Letter
     const { width, height } = page.getSize();
 
     const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
     const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
 
+    // Palette (subtle, premium)
     const ink = rgb(0.12, 0.14, 0.18);
     const muted = rgb(0.45, 0.5, 0.55);
     const rule = rgb(0.88, 0.9, 0.92);
+    const surface = rgb(0.97, 0.975, 0.98);
+    const surface2 = rgb(0.945, 0.955, 0.965);
+    const accent = rgb(0.12, 0.22, 0.40); // deep blue, restrained
 
     const margin = 56;
-    let y = height - 64;
+    const contentW = width - margin * 2;
+
+    const fmtGenerated = new Date(createdAtISO).toLocaleString("en-US");
+
+    const drawRule = (y: number) => {
+      page.drawLine({
+        start: { x: margin, y },
+        end: { x: width - margin, y },
+        thickness: 1,
+        color: rule,
+      });
+    };
+
+    const drawSectionTitle = (title: string, y: number) => {
+      page.drawText(title, {
+        x: margin,
+        y,
+        size: 11,
+        font: fontBold,
+        color: ink,
+      });
+      page.drawLine({
+        start: { x: margin, y: y - 8 },
+        end: { x: width - margin, y: y - 8 },
+        thickness: 1,
+        color: rule,
+      });
+      return y - 26;
+    };
+
+    // Value/label row helper (supports wrapping values)
+    const drawField = (label: string, value: string, x: number, y: number, w: number) => {
+      page.drawText(label, {
+        x,
+        y,
+        size: 8.5,
+        font: fontBold,
+        color: muted,
+      });
+      page.drawText(value, {
+        x,
+        y: y - 12,
+        size: 10,
+        font,
+        color: ink,
+        maxWidth: w,
+        lineHeight: 12,
+      });
+      // allocate space: label(0) + value(~24) baseline
+      return y - 36;
+    };
 
     /* -------------------- HEADER -------------------- */
 
+    let y = height - 64;
+
+    // Top brand line
     page.drawText("MarketMint", {
       x: margin,
       y,
@@ -129,171 +185,199 @@ export async function POST(req: Request) {
       color: ink,
     });
 
-    y -= 22;
-
-    page.drawText("Valuation Summary", {
+    // Small brand accent bar
+    page.drawRectangle({
       x: margin,
-      y,
-      size: 12,
-      font,
-      color: muted,
+      y: y - 10,
+      width: 62,
+      height: 2,
+      color: accent,
+      borderColor: accent,
     });
 
-    y -= 18;
-
-    page.drawText(
-      `Generated ${new Date(createdAtISO).toLocaleString("en-US")}`,
-      {
-        x: margin,
-        y,
-        size: 9,
-        font,
-        color: muted,
-      }
-    );
-
-    y -= 22;
+    // Right-side meta
+    const rightX = width - margin;
+    page.drawText("Valuation Report", {
+      x: rightX - 120,
+      y: y + 2,
+      size: 10,
+      font: fontBold,
+      color: muted,
+    });
 
     page.drawText(`Valuation ID: ${valuationId}`, {
-      x: margin,
-      y,
+      x: rightX - 180,
+      y: y - 14,
       size: 9,
       font,
       color: muted,
     });
 
-    y -= 20;
-
-    page.drawLine({
-      start: { x: margin, y },
-      end: { x: width - margin, y },
-      thickness: 1,
-      color: rule,
-    });
-
-    y -= 28;
-
-    /* -------------------- INPUTS -------------------- */
-
-    page.drawText("Inputs", {
-      x: margin,
-      y,
-      size: 12,
-      font: fontBold,
-      color: ink,
-    });
-
-    y -= 18;
-
-    const inputs: [string, string][] = [
-      ["Metal", metalType],
-      ["Karat / Purity", karat],
-      ["Weight (g)", numberLike(weightGramsNum)],
-      [
-        "Spot price (USD/oz)",
-        spotPriceNum ? `$${Math.round(spotPriceNum)}` : "—",
-      ],
-      ["Notes", notes],
-    ];
-
-    for (const [label, value] of inputs) {
-      page.drawText(label, {
-        x: margin,
-        y,
-        size: 9,
-        font: fontBold,
-        color: muted,
-      });
-      y -= 12;
-      page.drawText(value, {
-        x: margin,
-        y,
-        size: 10,
-        font,
-        color: ink,
-        maxWidth: width - margin * 2,
-      });
-      y -= 20;
-    }
-
-    y -= 12;
-
-    /* -------------------- RESULTS -------------------- */
-
-    page.drawText("Results", {
-      x: margin,
-      y,
-      size: 12,
-      font: fontBold,
-      color: ink,
-    });
-
-    y -= 22;
-
-    page.drawText("Estimated melt value", {
-      x: margin,
-      y,
+    page.drawText(`Generated: ${fmtGenerated}`, {
+      x: rightX - 180,
+      y: y - 28,
       size: 9,
       font,
       color: muted,
     });
 
+    y -= 46;
+    drawRule(y);
     y -= 26;
 
-    page.drawText(money(meltValueNum), {
+    /* -------------------- HERO VALUE CARD -------------------- */
+
+    const cardH = 122;
+    page.drawRectangle({
       x: margin,
-      y,
-      size: 26,
+      y: y - cardH + 10,
+      width: contentW,
+      height: cardH,
+      color: surface,
+      borderColor: rule,
+      borderWidth: 1,
+    });
+
+    // Left: item summary
+    page.drawText("Item summary", {
+      x: margin + 16,
+      y: y - 18,
+      size: 9,
+      font: fontBold,
+      color: muted,
+    });
+
+    page.drawText(`${metalType} • ${karat}`, {
+      x: margin + 16,
+      y: y - 38,
+      size: 14,
+      font: fontBold,
+      color: ink,
+      maxWidth: contentW * 0.55,
+    });
+
+    const wtLine =
+      weightGramsNum !== null ? `${numberLike(weightGramsNum)} g` : "—";
+    const spotLine =
+      spotPriceNum ? `$${Math.round(spotPriceNum)} / oz` : "—";
+
+    page.drawText(`Weight: ${wtLine}`, {
+      x: margin + 16,
+      y: y - 60,
+      size: 10,
+      font,
+      color: ink,
+    });
+
+    page.drawText(`Spot price: ${spotLine}`, {
+      x: margin + 16,
+      y: y - 76,
+      size: 10,
+      font,
+      color: ink,
+    });
+
+    // Right: melt value
+    const meltX = margin + contentW * 0.60;
+    page.drawText("Estimated melt value", {
+      x: meltX,
+      y: y - 18,
+      size: 9,
+      font: fontBold,
+      color: muted,
+    });
+
+    page.drawText(money(meltValueNum), {
+      x: meltX,
+      y: y - 52,
+      size: 28,
       font: fontBold,
       color: ink,
     });
 
-    y -= 30;
-
     page.drawText("Typical dealer offer band", {
-      x: margin,
-      y,
+      x: meltX,
+      y: y - 76,
       size: 9,
       font,
       color: muted,
     });
 
-    y -= 16;
+    page.drawText(`${money(dealerLowNum)} – ${money(dealerHighNum)}`, {
+      x: meltX,
+      y: y - 94,
+      size: 12,
+      font: fontBold,
+      color: ink,
+    });
 
-    page.drawText(
-      `${money(dealerLowNum)} – ${money(dealerHighNum)}`,
-      {
-        x: margin,
-        y,
-        size: 12,
-        font: fontBold,
-        color: ink,
-      }
+    y -= cardH + 18;
+
+    /* -------------------- INPUTS (TWO COLUMN) -------------------- */
+
+    y = drawSectionTitle("Inputs", y);
+
+    const colGap = 18;
+    const colW = (contentW - colGap) / 2;
+    const leftColX = margin;
+    const rightColX = margin + colW + colGap;
+
+    const yStart = y;
+
+    // Left column
+    let yL = yStart;
+    yL = drawField("METAL", metalType, leftColX, yL, colW);
+    yL = drawField("KARAT / PURITY", safeText(karat), leftColX, yL, colW);
+    yL = drawField("WEIGHT (GRAMS)", numberLike(weightGramsNum), leftColX, yL, colW);
+
+    // Right column
+    let yR = yStart;
+    yR = drawField(
+      "SPOT PRICE (USD/OZ)",
+      spotPriceNum ? `$${Math.round(spotPriceNum)}` : "—",
+      rightColX,
+      yR,
+      colW
     );
+    yR = drawField("SPOT SOURCE", spotSource, rightColX, yR, colW);
 
-    y -= 18;
+    // Notes spans full width (with light background)
+    const notesBoxY = Math.min(yL, yR) - 6;
+    const notesBoxH = 74;
 
-    page.drawText(`Spot source: ${spotSource}`, {
+    page.drawRectangle({
       x: margin,
-      y,
-      size: 9,
-      font,
+      y: notesBoxY - notesBoxH + 14,
+      width: contentW,
+      height: notesBoxH,
+      color: surface2,
+      borderColor: rule,
+      borderWidth: 1,
+    });
+
+    page.drawText("NOTES", {
+      x: margin + 14,
+      y: notesBoxY,
+      size: 8.5,
+      font: fontBold,
       color: muted,
     });
 
-    y -= 28;
+    page.drawText(notes, {
+      x: margin + 14,
+      y: notesBoxY - 14,
+      size: 10,
+      font,
+      color: ink,
+      maxWidth: contentW - 28,
+      lineHeight: 12,
+    });
+
+    y = notesBoxY - notesBoxH - 8;
 
     /* -------------------- NEXT STEPS -------------------- */
 
-    page.drawText("Next steps", {
-      x: margin,
-      y,
-      size: 12,
-      font: fontBold,
-      color: ink,
-    });
-
-    y -= 18;
+    y = drawSectionTitle("Recommended next steps", y);
 
     const steps = [
       "Get 2–3 quotes from reputable buyers (local jewelers, refiners, or online).",
@@ -301,51 +385,91 @@ export async function POST(req: Request) {
       "Compare selling options and timing at marketmintapp.com (Offers Hub).",
     ];
 
+    const bulletX = margin + 10;
+    const textX = margin + 24;
+
     for (const step of steps) {
-      page.drawText(`• ${step}`, {
-        x: margin,
+      // bullet
+      page.drawText("•", { x: bulletX, y, size: 12, font: fontBold, color: accent });
+      // text
+      page.drawText(step, {
+        x: textX,
         y,
-        size: 9,
+        size: 10,
         font,
         color: ink,
-        maxWidth: width - margin * 2,
+        maxWidth: contentW - 24,
+        lineHeight: 13,
       });
-      y -= 14;
+      y -= 18;
     }
 
-    y -= 20;
+    y -= 8;
 
-    /* -------------------- DISCLAIMER -------------------- */
+    /* -------------------- DISCLAIMER (BOTTOM CARD) -------------------- */
 
-    page.drawText("Important disclaimer", {
-      x: margin,
-      y,
-      size: 12,
-      font: fontBold,
-      color: ink,
-    });
-
-    y -= 16;
+    const footerY = 56;
 
     const disclaimer =
       "This document provides an informational melt value estimate based on the inputs shown and a spot price reference. " +
       "It is not an appraisal, certification, or purchase offer. Actual payouts may vary based on purity verification, " +
       "fees, shipping, insurance, local demand, and buyer margin.";
 
-    page.drawText(disclaimer, {
+    // Keep disclaimer above footer no matter what
+    const disclaimerCardH = 88;
+    const disclaimerY = Math.max(y - disclaimerCardH, footerY + 72);
+
+    page.drawRectangle({
       x: margin,
-      y,
+      y: disclaimerY,
+      width: contentW,
+      height: disclaimerCardH,
+      color: surface,
+      borderColor: rule,
+      borderWidth: 1,
+    });
+
+    page.drawText("Important disclaimer", {
+      x: margin + 14,
+      y: disclaimerY + disclaimerCardH - 22,
+      size: 10,
+      font: fontBold,
+      color: ink,
+    });
+
+    page.drawText(disclaimer, {
+      x: margin + 14,
+      y: disclaimerY + disclaimerCardH - 40,
       size: 9,
       font,
       color: muted,
-      maxWidth: width - margin * 2,
+      maxWidth: contentW - 28,
+      lineHeight: 12,
     });
 
     /* -------------------- FOOTER -------------------- */
 
+    drawRule(footerY + 18);
+
     page.drawText("marketmintapp.com", {
       x: margin,
-      y: 56,
+      y: footerY,
+      size: 9,
+      font: fontBold,
+      color: muted,
+    });
+
+    page.drawText(`Valuation ID: ${valuationId}`, {
+      x: margin,
+      y: footerY - 14,
+      size: 9,
+      font,
+      color: muted,
+    });
+
+    page.drawText(fmtGenerated, {
+      x: width - margin - 180,
+      y: footerY,
       size: 9,
       font,
       color: muted,
@@ -356,8 +480,7 @@ export async function POST(req: Request) {
     return new NextResponse(Buffer.from(pdfBytes), {
       headers: {
         "Content-Type": "application/pdf",
-        "Content-Disposition":
-          'attachment; filename="marketmint-valuation.pdf"',
+        "Content-Disposition": 'attachment; filename="marketmint-valuation.pdf"',
         "Cache-Control": "no-store",
       },
     });
