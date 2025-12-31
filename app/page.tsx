@@ -1,7 +1,23 @@
 // app/page.tsx
+import type { Metadata } from "next";
 import Link from "next/link";
 import ProWaitlistForm from "./components/ProWaitlistForm";
 import HomeCtas from "./components/HomeCtas";
+
+export const metadata: Metadata = {
+  title: "Gold Melt Value Calculator | How Much Is My Gold Worth? | MarketMint",
+  description:
+    "Calculate gold melt value from karat and weight using live spot prices. Get a fast estimate, view live prices by purity, and avoid low offers with MarketMint.",
+  alternates: { canonical: "/" },
+  openGraph: {
+    title: "Gold Melt Value Calculator | MarketMint",
+    description:
+      "Calculate gold melt value from karat and weight using live spot prices. Fast, free estimate + live prices by purity.",
+    url: "/",
+    type: "website",
+  },
+};
+
 type MarketSnapshot = {
   gold: number | null;
   silver: number | null;
@@ -9,6 +25,13 @@ type MarketSnapshot = {
   bitcoin: number | null;
   asOf?: string | null;
 };
+
+function formatMoney(value: number, decimals: number) {
+  return value.toLocaleString("en-US", {
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals,
+  });
+}
 
 function OutcomeCard({
   title,
@@ -48,13 +71,13 @@ function OutcomeCard({
     </Link>
   );
 }
+
 async function getMarketSnapshot(): Promise<MarketSnapshot> {
   try {
     const res = await fetch(
       `${process.env.NEXT_PUBLIC_SITE_URL ?? ""}/api/market-snapshot`,
       { cache: "no-store" }
     );
-
     if (!res.ok) throw new Error("snapshot fetch failed");
     return await res.json();
   } catch {
@@ -73,82 +96,93 @@ export default async function HomePage() {
 
   return (
     <main className="min-h-screen bg-slate-950 text-slate-50">
-      <div className="mx-auto max-w-6xl px-4 pb-16 pt-6 space-y-4">
+      <div className="mx-auto max-w-6xl px-4 pb-16 pt-6">
         {/* HERO */}
-        <section className="grid gap-6 md:grid-cols-[1.2fr_0.8fr] md:items-start">
+        <section className="grid gap-6 md:grid-cols-[1.15fr_0.85fr] md:items-start">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-emerald-300">
-              Melt value + pricing + offer tracking
+              Gold melt value • Live spot prices • Pricing reference
             </p>
 
             <h1 className="mt-3 text-4xl font-semibold tracking-tight sm:text-5xl">
-              Know what your jewelry is worth.
+              Gold melt value calculator.
               <br className="hidden sm:block" />
-              Avoid lowball offers fast.
+              Know what your gold is worth — fast.
             </h1>
 
             <p className="mt-4 max-w-xl text-sm leading-6 text-slate-300">
-              MarketMint provides a reference melt-value estimate based on live spot prices. Use it to sanity-check offers and decide where to sell.
+              Enter karat and weight to estimate melt value using live spot prices.
+              Use the Prices hub to sanity-check quotes and avoid getting underpaid.
             </p>
-{/* MARKET SNAPSHOT */}
-<section className="rounded-2xl border border-white/10 bg-white/5 p-4">
-  <div className="flex items-center justify-between gap-4">
-    <div>
-      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-emerald-200/80">
-        Market snapshot
-      </p>
-      <p className="mt-1 text-sm text-white/70">
-        Quick reference prices. For full detail, use the Prices hub.
-      </p>
-    </div>
 
-    <a
-      href="/prices"
-      className="text-sm font-semibold text-emerald-300 hover:text-emerald-200"
-    >
-      View full prices →
-    </a>
-  </div>
+            {/* MARKET SNAPSHOT */}
+            <section className="mt-5 rounded-2xl border border-white/10 bg-white/5 p-4">
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-emerald-200/80">
+                    Market snapshot
+                  </p>
+                  <p className="mt-1 text-sm text-white/70">
+                    Quick reference prices. For full detail, use the Prices hub.
+                  </p>
+                </div>
 
-  <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-    <div className="rounded-xl border border-white/10 bg-slate-950/40 p-3">
-      <p className="text-xs text-white/60">Gold (spot)</p>
-      <p className="mt-1 text-lg font-semibold text-white">
-  {snapshot.gold != null ? `$${snapshot.gold.toFixed(2)}` : ""}
-</p>
-      <p className="mt-1 text-xs text-white/50">Live prices in Prices hub</p>
-    </div>
+                <a
+                  href="/prices"
+                  className="text-sm font-semibold text-emerald-300 hover:text-emerald-200"
+                >
+                  View full prices →
+                </a>
+              </div>
 
-    <div className="rounded-xl border border-white/10 bg-slate-950/40 p-3">
-      <p className="text-xs text-white/60">Silver (spot)</p>
-     <p className="mt-1 text-lg font-semibold text-white">
-  {snapshot.silver != null ? `$${snapshot.silver.toFixed(2)}` : ""}
-</p>
-      <p className="mt-1 text-xs text-white/50">Live prices in Prices hub</p>
-    </div>
+              <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                <div className="rounded-xl border border-white/10 bg-slate-950/40 p-3">
+                  <p className="text-xs text-white/60">Gold (spot)</p>
+                  <p className="mt-1 text-lg font-semibold text-white">
+                    {snapshot.gold != null ? `$${formatMoney(snapshot.gold, 2)}` : "—"}
+                  </p>
+                  <p className="mt-1 text-xs text-white/50">
+                    Live prices in Prices hub
+                  </p>
+                </div>
 
-    <div className="rounded-xl border border-white/10 bg-slate-950/40 p-3">
-  <p className="text-xs text-white/60">S&amp;P 500</p>
-  <p className="mt-1 text-lg font-semibold text-white">
-    {snapshot.sp500 != null
-      ? `$${Math.round(snapshot.sp500).toLocaleString("en-US")}`
-      : "—"}
-  </p>
-  <p className="mt-1 text-xs text-white/50">Live prices in Prices hub</p>
-</div>
+                <div className="rounded-xl border border-white/10 bg-slate-950/40 p-3">
+                  <p className="text-xs text-white/60">Silver (spot)</p>
+                  <p className="mt-1 text-lg font-semibold text-white">
+                    {snapshot.silver != null
+                      ? `$${formatMoney(snapshot.silver, 2)}`
+                      : "—"}
+                  </p>
+                  <p className="mt-1 text-xs text-white/50">
+                    Live prices in Prices hub
+                  </p>
+                </div>
 
+                <div className="rounded-xl border border-white/10 bg-slate-950/40 p-3">
+                  <p className="text-xs text-white/60">S&amp;P 500</p>
+                  <p className="mt-1 text-lg font-semibold text-white">
+                    {snapshot.sp500 != null
+                      ? `$${Math.round(snapshot.sp500).toLocaleString("en-US")}`
+                      : "—"}
+                  </p>
+                  <p className="mt-1 text-xs text-white/50">
+                    Live prices in Prices hub
+                  </p>
+                </div>
 
-    <div className="rounded-xl border border-white/10 bg-slate-950/40 p-3">
-  <p className="text-xs text-white/60">Bitcoin</p>
-  <p className="mt-1 text-lg font-semibold text-white">
-    {snapshot.bitcoin != null
-      ? `$${Math.round(snapshot.bitcoin).toLocaleString("en-US")}`
-      : "—"}
-  </p>
-  <p className="mt-1 text-xs text-white/50">Live prices in Prices hub</p>
-</div>
-  </div>
-</section>
+                <div className="rounded-xl border border-white/10 bg-slate-950/40 p-3">
+                  <p className="text-xs text-white/60">Bitcoin</p>
+                  <p className="mt-1 text-lg font-semibold text-white">
+                    {snapshot.bitcoin != null
+                      ? `$${Math.round(snapshot.bitcoin).toLocaleString("en-US")}`
+                      : "—"}
+                  </p>
+                  <p className="mt-1 text-xs text-white/50">
+                    Live prices in Prices hub
+                  </p>
+                </div>
+              </div>
+            </section>
 
             {/* Primary CTA row (keeps your existing CTAs) */}
             <div className="mt-5 space-y-2">
@@ -158,7 +192,7 @@ export default async function HomePage() {
                   href="/gold"
                   className="inline-flex items-center justify-center rounded-full bg-emerald-500 px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-emerald-400"
                 >
-                  Quick gold calculator
+                  Open gold calculator
                 </Link>
 
                 <Link
@@ -185,20 +219,20 @@ export default async function HomePage() {
             <div className="mt-6 flex flex-wrap gap-2 text-xs text-slate-300">
               <span className="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-slate-900/40 px-3 py-1">
                 <span className="h-2 w-2 rounded-full bg-emerald-400" />
-                Melt value estimate
+                Gold melt value estimate
               </span>
               <span className="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-slate-900/40 px-3 py-1">
                 <span className="h-2 w-2 rounded-full bg-emerald-400" />
-                Purity price table
+                Prices by karat/purity
               </span>
               <span className="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-slate-900/40 px-3 py-1">
                 <span className="h-2 w-2 rounded-full bg-emerald-400" />
-                Offer tracking
+                Offer tracking (optional)
               </span>
             </div>
           </div>
 
-          {/* Outcome router (this is the “mobile nav fix without nav work”) */}
+          {/* Outcome router */}
           <div className="rounded-2xl border border-slate-800 bg-slate-900/20 p-5">
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-300">
               Choose your goal
@@ -210,7 +244,7 @@ export default async function HomePage() {
             <div className="mt-4 grid gap-3">
               <OutcomeCard
                 title="Get a fast estimate (most common)"
-                description="Enter karat + grams and get an estimated melt value in seconds. Great if you’re just curious."
+                description="Enter karat + grams and get an estimated gold melt value in seconds."
                 href="/gold"
                 cta="Open the calculator"
                 badge="Fast"
@@ -223,24 +257,18 @@ export default async function HomePage() {
                 badge="Popular"
               />
               <OutcomeCard
-                title="I’m selling multiple items"
-                description="Track items, store notes, and log offers so you can compare buyers and avoid getting underpaid."
-                href="/login"
-                cta="Go to the workspace"
-                badge="Power users"
+                title="Track offers before you sell"
+                description="Preview how offer tracking works. Helpful for small resellers comparing multiple buyers."
+                href="/offers"
+                cta="Explore the offers demo"
+                badge="Demo"
               />
-             
             </div>
           </div>
         </section>
- <OutcomeCard
-                title="See how offer tracking works"
-                description="Preview the offers flow without committing. Good for small resellers."
-                href="/offers"
-                cta="Explore the offers demo"
-              />
+
         {/* SIMPLE EXPLAINER */}
-        <section className="grid gap-6 md:grid-cols-3">
+        <section className="mt-8 grid gap-6 md:grid-cols-3">
           <div className="rounded-2xl border border-slate-800 bg-slate-900/20 p-6">
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-emerald-300">
               Step 1
@@ -270,13 +298,13 @@ export default async function HomePage() {
             <h3 className="mt-2 text-base font-semibold">Compare before you sell</h3>
             <p className="mt-2 text-sm leading-6 text-slate-300">
               Use the prices hub for reference, then track real offers so you
-              can quickly spot lowball quotes.
+              can quickly spot low quotes.
             </p>
           </div>
         </section>
 
-        {/* WAITLIST / PRO (keep, but make it feel optional) */}
-        <section className="rounded-2xl border border-slate-800 bg-slate-900/20 p-6">
+        {/* WAITLIST / PRO */}
+        <section className="mt-8 rounded-2xl border border-slate-800 bg-slate-900/20 p-6">
           <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-300">
@@ -289,9 +317,7 @@ export default async function HomePage() {
                 Join the Pro waitlist if you want multi-item tracking, exports, and more.
               </p>
             </div>
-            <div className="text-xs text-slate-500">
-              Calculator stays free.
-            </div>
+            <div className="text-xs text-slate-500">Calculator stays free.</div>
           </div>
 
           <div className="mt-5">
@@ -299,8 +325,8 @@ export default async function HomePage() {
           </div>
         </section>
 
-        {/* Footer links (quick trust) */}
-        <section className="text-xs text-slate-500">
+        {/* Footer trust */}
+        <section className="mt-6 text-xs text-slate-500">
           <p>
             Estimates are informational and may vary from real buyer offers due to fees,
             verification, refining, and market conditions.
@@ -310,4 +336,3 @@ export default async function HomePage() {
     </main>
   );
 }
-  
