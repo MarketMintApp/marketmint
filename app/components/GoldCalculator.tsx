@@ -11,14 +11,10 @@ type GoldCalculatorProps = {
   showHeading?: boolean;
   showSaveControls?: boolean;
 
-  onSave?: (valuation: {
-    metal_type: string;
-    karat: number; // for non-gold, we store "karat-equivalent" (purity * 24)
-    weight_gram: number;
-    spot_price: number;
-    melt_value: number;
-    notes?: string;
-  }) => void;
+  // Next.js TS plugin flags function props as non-serializable.
+// We keep valuation typing elsewhere; we only loosen the prop surface here.
+onSave?: unknown;
+
 
   lockMode?: LockMode;
   freeValuations?: number;
@@ -143,6 +139,20 @@ export default function GoldCalculator({
   pdfPriceText = "$4.99",
   lockResults = false,
 }: GoldCalculatorProps) {
+
+const onSaveFn =
+  typeof onSave === "function"
+    ? (onSave as (valuation: {
+        metal_type: string;
+        karat: number;
+        weight_gram: number;
+        spot_price: number;
+        melt_value: number;
+        notes?: string;
+      }) => void)
+    : undefined;
+
+
   const [metalType, setMetalType] = useState<string>("gold");
   const [karat, setKarat] = useState<number>(14);
   const [weightGrams, setWeightGrams] = useState<string>("");
@@ -302,9 +312,10 @@ export default function GoldCalculator({
   }, [showPremiumPdfPanel, pdfPriceText, lockMode, freeValuations, metalType]);
 
   function handleSave() {
-    if (!onSave || !canSave) return;
+    if (!onSaveFn || !canSave) return;
 
-    onSave({
+
+    onSaveFn({
       metal_type: metalType,
       karat,
       weight_gram: Number(weightGrams),
